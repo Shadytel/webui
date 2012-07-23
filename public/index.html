@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/shady.css" rel="stylesheet">
+
+    <script type="text/javascript" src="js/spin.js"></script>
+    <script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="js/jquery.spin.js"></script>
+    <script type="text/javascript" src="js/underscore-min.js"></script>
+    <script type="text/javascript" src="js/backbone-min.js"></script>
+    <script type="text/javascript" src="js/ICanHaz.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/shady.js"></script>
+
+    <script type="text/html" id="StatusView">
+      <p>Put network status here</p>
+    </script>
+
+    <script type="text/html" id="LoginView">
+      <div class="row">
+        <div class="span7 register-info">
+          <h3>Why register?</h3>
+          <ul>
+            <li><strong>Send and receive SMSs</strong> from the web.</li>
+            <li>Listen to your <strong>voicemail</strong> messages.</li>
+            <li>Create SMS apps using our <strong>shortcode API</strong>.</li>
+            <li>Get listed in the <strong>subscriber directory</strong>.</li>
+          </ul>
+          <p>
+            <button class="btn btn-large register">Create Account</button>
+          </p>
+        </div>
+        <div class="span5">
+          <form class="well">
+            <h3>Login</h3>
+            <label>Your ShadyTel Number:</label>
+            <input type="text" placeholder="XXX-XXXX" name="number">
+            <label>Password:</label>
+            <input type="password" name="password">
+            <p><button type="submit" class="submit btn">Login</button>
+            <a href="#" class="forgot">Forgot Password</a>
+            </p>
+          </form>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="RegisterView">
+      <form class="well step1">
+        <h3>Verify phone number</h3>
+        <label>Enter your Shadytel phone number:</label>
+        <input type="text" placeholder="1-XXXX-XX" class="phone" />
+        <p><button type="submit" class="btn submit">Send Confirmation Code</button></p>
+      </form>
+      <form class="form-horizontal well step2 hide">
+        <h3>Create Account</h3>
+        <fieldset>
+          <legend>Confirm your phone number.</legend>
+          <div class="control-group">
+            <label class="control-label">Phone Number:</label>
+            <div class="controls">
+              <input type="text" disabled="true" value="1234">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Confirmation code:</label>
+            <div class="controls">
+              <input type="text" class="code">
+              <p class="help-block">Enter the code in the SMS you received.</p>
+              <button class="btn">Resend Confirmation Code</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Create a password</legend>
+          <div class="control-group">
+            <label class="control-label">Enter Password</label>
+            <div class="controls">
+              <input type="password">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Confirm Password</label>
+            <div class="controls">
+              <input type="password">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Create a public directory profile (optional)</legend> 
+          <div class="control-group">
+            <label class="control-label">Name</label>
+            <div class="controls">
+              <input type="text">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Email</label>
+            <div class="controls">
+              <input type="text">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-label">Bio</label>
+            <div class="controls">
+              <textarea></textarea>
+            </div>
+          </div>
+        </fieldset>
+        <p><button type="submit" class="btn submit">Create Account</button></p>
+      </form>
+    </script>
+
+    <script type="text/html" id="ShortcodesView">
+      <h2>Your Shortcodes</h2>
+    </script>
+
+    <script type="text/html" id="AccountView">
+      <div class="row">
+        <div class="span3">
+          <h3>My Account</h3>
+          <ul class="nav nav-pills nav-stacked">
+            <li class="active"><a href="#">Voicemail</a></li>
+            <li><a href="#">SMS Inbox</a></li>
+            <li><a href="#">My Shortcode Apps</a></li>
+            <li><a href="#">Edit Profile</a></li>
+          </ul>
+          </div>
+      </div>
+    </script>
+  </head>
+
+  <body>
+    <header>
+      <h1>Shadytel</h1>
+    </header>
+    <div id="app">
+      <div class="container">
+        <ul class="nav nav-tabs" id="main-nav">
+          <li id="status"><a href="/status">Network Status</a></li>
+          <li id="shortcodes"><a href="/shortcodes">Shortcode Directory</a></li>
+          <li id="directory"><a href="/directory">Subscriber Directory</a></li>
+          <li id="account"><a href="/account">My Account</a></li>
+        </ul>
+      </div>
+
+      <div class="container" id="content"></div>
+    </div>
+  </body>
+</html>
