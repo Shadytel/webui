@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="css/shady.css" rel="stylesheet">
+    <title>Shadytel</title>
 
-    <script type="text/javascript" src="js/spin.js"></script>
-    <script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
-    <script type="text/javascript" src="js/jquery.spin.js"></script>
-    <script type="text/javascript" src="js/underscore-min.js"></script>
-    <script type="text/javascript" src="js/backbone-min.js"></script>
-    <script type="text/javascript" src="js/ICanHaz.min.js"></script>
-    <script type="text/javascript" src="js/bootstrap.js"></script>
-    <script type="text/javascript" src="js/shady.js"></script>
+    <link href="/css/bootstrap.css" rel="stylesheet">
+    <link href="/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/css/shady.css" rel="stylesheet">
+
+    <script type="text/javascript" src="/js/spin.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery.spin.js"></script>
+    <script type="text/javascript" src="/js/underscore-min.js"></script>
+    <script type="text/javascript" src="/js/backbone-min.js"></script>
+    <script type="text/javascript" src="/js/ICanHaz.min.js"></script>
+    <script type="text/javascript" src="/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/js/shady.js"></script>
 
     <script type="text/html" id="StatusView">
       <p>Put network status here</p>
@@ -47,29 +49,36 @@
       </div>
     </script>
 
-    <script type="text/html" id="RegisterView">
-      <form class="well step1">
-        <h3>Verify phone number</h3>
-        <label>Enter your Shadytel phone number:</label>
-        <input type="text" placeholder="1-XXXX-XX" class="phone" />
-        <p><button type="submit" class="btn submit">Send Confirmation Code</button></p>
-      </form>
-      <form class="form-horizontal well step2 hide">
+    <script type="text/html" id="account_verify">
+      <div class="row">
+        <div class="span5">
+          <form class="well">
+            <h3>Verify phone number</h3>
+            <label>Enter your Shadytel phone number:</label>
+            <input type="text" placeholder="1-XXXX-XX" class="phone" />
+            <p><button type="submit" class="btn submit">Send Confirmation Code</button></p>
+          </form>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="account_register">
+      <form class="form-horizontal">
         <h3>Create Account</h3>
         <fieldset>
           <legend>Confirm your phone number.</legend>
           <div class="control-group">
             <label class="control-label">Phone Number:</label>
             <div class="controls">
-              <input type="text" disabled="true" value="1234">
+              <input type="text" disabled="true" name="number" value="{{number}}">
+              <input type="hidden" name="number" value="{{number}}">
             </div>
           </div>
           <div class="control-group">
             <label class="control-label">Confirmation code:</label>
             <div class="controls">
-              <input type="text" class="code">
+              <input type="text" class="code" name="token">
               <p class="help-block">Enter the code in the SMS you received.</p>
-              <button class="btn">Resend Confirmation Code</button>
             </div>
           </div>
         </fieldset>
@@ -79,13 +88,13 @@
           <div class="control-group">
             <label class="control-label">Enter Password</label>
             <div class="controls">
-              <input type="password">
+              <input type="password" name="password">
             </div>
           </div>
           <div class="control-group">
             <label class="control-label">Confirm Password</label>
             <div class="controls">
-              <input type="password">
+              <input type="password" name="password_confirm">
             </div>
           </div>
         </fieldset>
@@ -95,42 +104,106 @@
           <div class="control-group">
             <label class="control-label">Name</label>
             <div class="controls">
-              <input type="text">
+              <input type="text" name="name">
             </div>
           </div>
           <div class="control-group">
-            <label class="control-label">Email</label>
+            <label class="control-label" name="email">Email</label>
             <div class="controls">
-              <input type="text">
+              <input type="text" name="email">
             </div>
           </div>
           <div class="control-group">
-            <label class="control-label">Bio</label>
+            <label class="control-label" name="bio">Bio</label>
             <div class="controls">
               <textarea></textarea>
             </div>
           </div>
         </fieldset>
-        <p><button type="submit" class="btn submit">Create Account</button></p>
+        <p><button type="submit" class="btn btn-primary submit">Create Account</button></p>
       </form>
     </script>
 
-    <script type="text/html" id="ShortcodesView">
-      <h2>Your Shortcodes</h2>
+    <script type="text/html" id="AccountView">
+      <div class="row hide" id="account-view">
+        <div class="span3">
+          <div class="well account-info">
+            <p>Your Shadytel Number: <span class="number"></span></p>
+            <p style="margin-bottom: 0"><a class="logout" href="#">Logout</a></p>
+          </div>
+          <ul class="nav nav-pills nav-stacked">
+            <!--
+            <li><a href="#">Voicemail</a></li>
+            <li><a href="#">SMS Inbox</a></li>
+            -->
+            <li id="apps"><a href="/account/apps">My Shortcode Apps</a></li>
+            <li id="applets"><a href="/account/applets">My SIM Applets</a></li>
+            <li id="profile"><a href="/account/profile">Edit Profile</a></li>
+          </ul>
+        </div>
+        <div class="span9 content">
+        </div>
+      </div>
     </script>
 
-    <script type="text/html" id="AccountView">
-      <div class="row">
-        <div class="span3">
-          <h3>My Account</h3>
-          <ul class="nav nav-pills nav-stacked">
-            <li class="active"><a href="#">Voicemail</a></li>
-            <li><a href="#">SMS Inbox</a></li>
-            <li><a href="#">My Shortcode Apps</a></li>
-            <li><a href="#">Edit Profile</a></li>
-          </ul>
+    <script type="text/html" id="AccountAppsView">
+      <h3>My Shortcode Apps</h3>
+      <p><button class="btn" id="new-shortcode">New Shortcode</button></p>
+      <table class="table table-bordered table-striped" id="apps-table">
+        <thead>
+          <tr>
+            <th>Number</th>
+            <th>App Name</th>
+            <th>App Description</th>
+            <th>App URL</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </script>
+
+    <script type="text/html" id="AccountProfileView">
+      <h3>Edit Profile</h3>
+    </script>
+
+    <script type="text/html" id="NewShortcodeView">
+      <h3>New Shortcode App</h3>
+      <form class="form-horizontal">
+        <div class="control-group">
+          <label class="control-label" for="name">App Name:</label>
+          <div class="controls">
+            <input type="text" name="name" id="name">
           </div>
-      </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="description">App Description:</label>
+          <div class="controls">
+            <textarea name="description" id="description" />
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="number">Shortcode:</label>
+          <div class="controls">
+            <select class="input-mini" name="numberPrefix">
+              <option>2</option>
+              <option>4</option>
+            </select>
+            -
+            <input type="text" placeholder="1234" class="input-mini" name="number" id="number">
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="url">Callback URL:</label>
+          <div class="controls">
+            <input type="text" class="input-xlarge" name="url" id="url" placeholder="http://">
+            <p class="help-block">This url will be called blah blah</p>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="create">Create App</button>
+          <button class="btn">Cancel</button>
+        </div>
+      </form>
     </script>
   </head>
 
@@ -144,10 +217,10 @@
           <li id="status"><a href="/status">Network Status</a></li>
           <li id="shortcodes"><a href="/shortcodes">Shortcode Directory</a></li>
           <li id="directory"><a href="/directory">Subscriber Directory</a></li>
+          <li id="applets"><a href="/applets">SIM Applets</a></li>
           <li id="account"><a href="/account">My Account</a></li>
         </ul>
       </div>
-
       <div class="container" id="content"></div>
     </div>
   </body>

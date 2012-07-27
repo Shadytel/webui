@@ -1,12 +1,29 @@
+function setAccountView(subView) { // FIXME: Move this
+  var accountView;
+  if (app.currentView instanceof AccountView) {
+    accountView = app.currentView;
+  } else {
+    var accountView = new AccountView();
+    app.setView(accountView);
+  }
+  accountView.setView(subView);
+}
+
 var ShadyRouter = Backbone.Router.extend({
   routes: {
-    '':                'status',
-    'status':          'status',
-    'shortcodes':      'shortcodes',
-    'directory':       'directory',
-    'account':         'accountApps',
-    'account/apps':    'accountApps',
-    'account/profile': 'accountProfile'
+    '':                     'status',
+    'status':               'status',
+    'shortcodes':           'shortcodes',
+    'directory':            'directory',
+    'applets':              'applets',
+    'account':              'accountApps',
+    'account/login':        'accountLogin',
+    'account/register':     'accountRegister',
+    'account/apps':         'accountApps',
+    'account/applets':      'accountApplets',
+    'account/apps/new':     'accountAppsNew',
+    'account/apps/:number': 'accountApp',
+    'account/profile':      'accountProfile'
   },
 
   status: function() {
@@ -21,12 +38,37 @@ var ShadyRouter = Backbone.Router.extend({
     app.setView(new DirectoryView());
   },
 
+  applets: function() {
+    app.setView(new SIMAppletsView());
+  },
+
+  accountRegister: function() {
+    app.setView(new AccountVerifyView());
+  },
+
+  accountLogin: function() {
+    app.setView(new LoginView());
+  },
+
   accountApps: function() {
-    app.setView(new AccountShortcodesView());
+    setAccountView(new AccountShortcodesView());
+  },
+
+  accountApplets: function() {
+    setAccountView(new AccountAppletsView());
+  },
+
+  accountAppsNew: function() {
+    setAccountView(new NewShortcodeView());
+  },
+
+  accountApp: function(number) {
+    var shortcode = new Shortcode(number);
+    setAccountView(new ShortcodeView({ model: shortcode }));
   },
 
   accountProfile: function() {
-    app.setView(new AccountProfileView());
+    setAccountView(new AccountProfileView());
   }
 });
 
@@ -38,8 +80,8 @@ var ShortcodeList = Backbone.Collection.extend({
   url: '/api/shortcodes'
 });
 
-var ShortcodeView = Backbone.View.extend({
-  tagName: 'li',
+var ShortcodeRowView = Backbone.View.extend({
+  tagName: 'tr',
 
   events: {
 
@@ -51,14 +93,12 @@ var ShortcodeView = Backbone.View.extend({
   },
 
   render: function() {
-    // FIXME
+    this.$el.html('<td>foo</td>');
+    return this;
   }
 });
 
 var AppView = Backbone.View.extend({
-  events: {
-  },
-
   initialize: function() {
     $('#app').append($('<div>').addClass('loading'));
 
@@ -109,15 +149,6 @@ var StatusView = Backbone.View.extend({
   }
 });
 
-var ShortcodesView = Backbone.View.extend({
-  mainNavId: 'shortcodes',
-
-  render: function() {
-    this.$el.html('Put shortcodes directory here');
-    return this;
-  }
-});
-
 var DirectoryView = Backbone.View.extend({
   mainNavId: 'directory',
 
@@ -127,16 +158,107 @@ var DirectoryView = Backbone.View.extend({
   }
 });
 
-var AccountShortcodesView = Backbone.View.extend({
+var ShortcodesView = Backbone.View.extend({
+  mainNavId: 'shortcodes'
+})
+
+var SIMAppletsView = Backbone.View.extend({
+  mainNavId: 'applets'
+});
+
+var AccountView = Backbone.View.extend({
   mainNavId: 'account',
 
+  events: {
+    'click .logout': 'logout',
+    'click .nav li a': 'navClick'
+  },
+
   initialize: function() {
+    this.$el.html(ich.AccountView);
+
+    if (!app.user) {
+      this.updateUser()
+    }
+  },
+
+  navClick: function(event) {
+    router.navigate($(event.target).attr('href'), { trigger: true })
+    return false;
+  },
+
+  render: function() {
+    if (app.user) {
+      this.$el.find('.number').html(app.user.number);
+      this.$el.find('#account-view').show();
+    }
+    return this;
+  },
+
+  setView: function(view) {
+    if (this.currentView) {
+      if (this.currentView.hidden) {
+        this.currentView.hidden();
+      }
+
+      this.currentView.remove();
+    }
+
+    this.currentView = view;
+    this.$el.find('.content').append(view.render().el);
+    if (view.shown) {
+      view.shown();
+    }
+
+    this.$el.find('.nav li').removeClass('active');
+    this.$el.find('.nav li#' + this.currentView.accountNavId).addClass('active');
+  },
+
+  updateUser: function() {
+    var self = this;
+    $.get('/api/me', function(data) {
+      app.user = data.user;
+      self.render();
+    })
+    .error(function() {
+      app.user = null;
+      self.showLogin();
+    });
+  },
+
+  logout: function() {
+    var self = this;
+
+    $.post('/api/logout', function() {
+      app.user = null;
+      self.showLogin();
+    })
+    .error(function() {
+      alert('error');
+    });
+    return false;
+  },
+
+  showLogin: function() {
+    app.returnTo = window.location.pathname;
+    router.navigate('/account/login', { trigger: true });
+  }
+});
+
+var AccountShortcodesView = Backbone.View.extend({
+  accountNavId: 'apps',
+
+  events: {
+    'click #new-shortcode': 'newShortcode'
+  },
+
+  initialize: function() {
+    this.$el.html(ich.AccountAppsView({ user: app.user }));
+
     this.shortcodes = new ShortcodeList();
     this.shortcodes.bind('add',   this.addOne, this);
     this.shortcodes.bind('reset', this.addAll, this);
     this.shortcodes.bind('all',   this.render, this);
-
-    app.showLoading();
 
     this.shortcodes.fetch({
       success: function (collection, response) {
@@ -154,15 +276,13 @@ var AccountShortcodesView = Backbone.View.extend({
   },
 
   render: function() {
-    if (false) { // FIXME: If logged in...
-      this.$el.html(ich.AccountView());
-    }
+    this.$el.find('.nav li#apps').addClass('active');
     return this;
   },
 
   addOne: function(shortcode) {
-    var view = new ShortcodeView({ model: shortcode });
-    this.$('#shortcode-list').append(view.render().el);
+    var view = new ShortcodeRowView({ model: shortcode });
+    this.$('#apps-table tbody').append(view.render().el);
   },
 
   addAll: function() {
@@ -176,13 +296,32 @@ var AccountShortcodesView = Backbone.View.extend({
         // FIXME: Show content
       },
       error: function (collection, response) {
+        alert('aahahh');
         if (response.status == 401) {
-          window.app.showLogin();
+          // FIXME
         }
       }
     });
+  },
+
+  newShortcode: function() {
+   router.navigate('/account/apps/new', { trigger: true });
   }
-})
+});
+
+var AccountAppletsView = Backbone.View.extend({
+  accountNavId: 'applets'
+});
+
+var AccountProfileView = Backbone.View.extend({
+  accountNavId: 'profile',
+
+  render: function() {
+    this.$el.html(ich.AccountProfileView({ user: app.user }));
+    this.$el.find('.nav li#profile').addClass('active');
+    return this;
+  }
+});
 
 var LoginView = Backbone.View.extend({
   mainNavId: 'account',
@@ -194,7 +333,10 @@ var LoginView = Backbone.View.extend({
   },
 
   initialize: function() {
-
+    // FIXME: Doesn't work if the page reloads obviously...
+    if (app.user) {
+      router.navigate('account', { trigger: true });
+    }
   },
 
   render: function() {
@@ -203,24 +345,24 @@ var LoginView = Backbone.View.extend({
   },
 
   login: function() {
-    window.app.showLoading();
-
     var params = this.$el.find('form').serializeObject();
 
-    $.post('/api/login', params, function() {
-      window.app.loadShortcodes();
+    $.post('/api/login', params, function(data) {
+      app.user = data.user;
+
+      var returnTo = (app.returnTo) ? app.returnTo : '/account';
+      router.navigate(returnTo, { trigger: true });
+
+      app.returnTo = null;
+
     }).error(function() {
       alert('Login Failed');
-    })
-    .complete(function() {
-      window.app.hideLoading();
     });
-
     return false;
   },
 
   register: function() {
-    window.app.setView(new RegisterView());
+    router.navigate('account/register', { trigger: true });
     return false;
   },
 
@@ -229,42 +371,101 @@ var LoginView = Backbone.View.extend({
   }
 });
 
-var RegisterView = Backbone.View.extend({
+var AccountVerifyView = Backbone.View.extend({
   mainNavId: 'account',
 
   events: {
-    'click .step1 .submit': 'getCode',
-    'click .step2 .submit': 'register'
+    'click .submit': 'sendCode',
   },
 
-  getCode: function() {
-    window.app.showLoading();
-
+  sendCode: function() {
     var self = this;
 
     var params = { number: this.$el.find('.phone').val() };
     $.post('/api/send_code', params, function() {
-      self.$el.find('.step1').hide();
-      self.$el.find('.step2').show();
+      app.setView(new AccountRegisterView({ attributes: params }));
     })
-    .error(function() {
-      alert('error');
-    })
-    .complete(function() {
-      window.app.hideLoading();
+    .error(function(req, status, err) {
+      alert(req.responseText); // FIXME
     });
 
     return false;
   },
 
+  render: function() {
+    this.$el.html(ich.account_verify);
+    return this;
+  }
+});
+
+var AccountRegisterView = Backbone.View.extend({
+  mainNavId: 'account',
+
+  events: {
+    'click .submit': 'register'
+  },
+
   register: function() {
+    var params = this.$el.find('form').serializeObject();
+    $.post('/api/register', params, function() {
+      router.navigate('account', { trigger: true });
+    })
+    .error(function(req, status, err) {
+      alert('failed!');
+    });
     return false;
   },
 
   render: function() {
-    this.$el.html(ich.RegisterView);
+    this.$el.html(ich.account_register(this.attributes));
     return this;
   }
+});
+
+var NewShortcodeView = Backbone.View.extend({
+  accountNavId: 'apps',
+
+  events: {
+    'click #create': 'createApp'
+  },
+
+  createApp: function() {
+    var params = this.$el.find('form').serializeObject();
+    $.post('/api/shortcodes/create', params, function(response) {
+      // FIXME: Show an "app was created!" flash message
+      router.navigate('/account/apps/' + response.number);
+    })
+    .error(function(req, status, err) {
+      alert('failed!');
+    });
+    return false;
+  },
+
+  render: function() {
+    this.$el.html(ich.NewShortcodeView());
+    return this;
+  }
+});
+
+var ShortcodeView = Backbone.View.extend({
+  accountNavId: 'apps',
+
+  events: {
+
+  },
+
+  render: function() {
+    this.$el.html(ich.ShortcodeView(this.attributes));
+  }
+});
+
+// --- Init!
+
+$(document).ajaxStart(function() {
+  window.app.showLoading();
+});
+$(document).ajaxComplete(function() {
+  window.app.hideLoading();
 });
 
 $(function () {

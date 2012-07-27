@@ -35,3 +35,7 @@ legend {
 .register-info button {
   margin-top: 0.5em;
 }
+
+.account-info .number {
+  font-weight: bold;
+}
