@@ -9,20 +9,44 @@ $config = YAML::load_file('shady.config')
 
 class ConfirmationToken
   include Mongoid::Document
+
+  validates :number, presence: true, uniqueness: true
+  validates :value,  presence: true
+
   field :number, type: String
-  field :token,  type: String
+  field :value,  type: String
 end
 
 class User
   include Mongoid::Document
 
-  # Phone number is the primary key
-  field :number,   type: String
-  field :password, type: String
+  validates :number,   presence: true, uniqueness: true
+  validates :password, presence: true, confirmation: true, length: { minimum: 8, maximum: 16, allow_blank: false }, if: :validate_password?
+  validates :password_confirmation, presence: true, if: :validate_password?
+
+  validate :verify_existing_password, on: :update, if: Proc.new { |user| user.password.present? }
+
+  validate :verify_token, on: :create
+
+  attr_accessor :token
+  attr_accessor :password
+  attr_accessor :password_confirmation
+  attr_accessor :existing_password
+
+  before_save :prepare_password
+  after_create :delete_token
+
+  field :number,        type: String
+  field :password_hash, type: String
+  field :password_salt, type: String
 
   # Optional profile info
   field :name,  type: String
   field :email, type: String
+
+  attr_protected :number
+  attr_protected :password_hash
+  attr_protected :password_salt
 
   def as_json
     {
@@ -32,15 +56,72 @@ class User
       bio:    (self.bio   || '')
     }
   end
+
+  def self.authenticate(number, pass)
+    user = User.where(number: number).first
+    return user if user && user.matching_password?(pass)
+  end
+  
+  def matching_password?(pass)
+    BCrypt::Password.new(self.password_hash) == "#{pass}#{self.password_salt}"
+  end
+
+  private
+
+  def verify_token
+    unless find_token
+      self.errors.add(:token, 'Incorrect token')
+    end
+  end
+
+  def verify_existing_password
+    unless matching_password?(self.existing_password)
+      self.errors.add(:existing_password, 'is not correct')
+    end
+  end
+
+  def prepare_password
+    unless password.blank?
+      self.password_salt = SecureRandom.hex(5).scan(/../).join
+      self.password_hash = ::BCrypt::Password.create("#{self.password}#{self.password_salt}").to_s
+    end
+  end
+
+  def delete_token
+    find_token.delete
+  end
+
+  def find_token
+    ConfirmationToken.where(number: self.number, value: self.token).first
+  end
+
+  def validate_password?()
+    # Validate password if there's no encrypted password (new account) or if 
+    # the user specified a new password (edit account)
+    password_hash.blank? || password.present?
+  end
 end
 
 class Shortcode
   include Mongoid::Document
 
+  VALID_PREFIXES = %w(2 4)
+
   field :name,        type: String
   field :description, type: String
-  field :number,      type: Integer
+  field :number,      type: String
   field :url,         type: String
+  field :owner_id,    type: Moped::BSON::ObjectId
+
+  attr_protected :number
+
+  validates :name,        presence: true, uniqueness: true
+  validates :description, presence: true
+  validates :url,         presence: true, format: { with: URI::regexp([/^http/, /^https/]) }
+  validates :owner_id,    presence: true
+  validates :number,      presence: true, uniqueness: true
+
+  validate :check_number
 
   def as_json
     {
@@ -50,11 +131,28 @@ class Shortcode
       url:         self.url
     }
   end
+
+  def build_number(prefix, suffix)
+    self.number = "#{prefix}-#{suffix}"
+    puts "built number #{self.number}"
+  end
+
+  private
+
+  def check_number
+    number = self.number.to_i
+    self.errors.add(:number, 'invalid prefix') unless VALID_PREFIXES.any? { |prefix| self.number.starts_with?(prefix) }
+    self.errors.add(:number, 'invalid number') unless self.number.length > 1
+  end
 end
 
 # FIXME
 def json_halt(code, message=nil)
   halt code, { 'Content-Type' => 'application/json' }, { success: false, message: message }.to_json
+end
+
+def json_error(json)
+  halt 400, { 'Content-Type' => 'application/json' }, { success: false }.merge(json).to_json
 end
 
 def password_digest(password)
@@ -85,12 +183,26 @@ get '/api/me' do
   json success: true, user: @user.as_json
 end
 
+put '/api/me' do
+  if @user.update_attributes(params)
+    json success: true, user: @user.as_json
+  else
+    json_error errors: @user.errors.as_json
+  end
+end
+
+get '/api/subscribers' do
+  json User.all.map {|u| u.as_json }
+end
+
+get '/api/shortcodes' do
+  json Shortcode.all.map {|s| s.as_json }
+end
+
 post '/api/login' do
-  if @user = User.where(number: params[:number]).first
-    if valid_password?(@user.password, params[:password])
-      session[:uid] = @user._id
-      json_halt 200, success: true, user: @user.as_json # FIXME
-    end
+  if @user = User.authenticate(params[:number], params[:password])
+    session[:uid] = @user._id
+    json_halt 200, success: true, user: @user.as_json # FIXME
   end
 
   session[:uid] = nil
@@ -105,78 +217,91 @@ end
 post '/api/send_code' do
   number = params[:number]
 
-  json_halt 500, 'Invalid number' if number.blank? # FIXME: Better validation
-  json_halt 500, 'Already registered' unless User.where(number: number).count.zero?
+  json_halt 400, 'Already registered' unless User.where(number: number).count.zero?
 
+  # FIXME:
   # new_value = SecureRandom.hex(5).scan(/../).join('-')
   new_value = '1234'
 
+  puts "send_code #{params.inspect}"
+
   if token = ConfirmationToken.where(number: number).first
-    token.update(value: new_value)
+    token.set(value: new_value)
   else
-    token = ConfirmationToken.create(number: number, value: new_value)
+    token = ConfirmationToken.new(number: number, value: new_value)
   end
 
-  # FIXME: Send SMS
+  if token.save
+    json success: true
 
-  json success: true
+    # FIXME: Send SMS!!!
+
+  else
+    json_error errors: token.errors.as_json
+  end
 end
 
 post '/api/register' do
   user = User.where(number: params[:number]).first
-  json_halt 500, 'User already exists' if user
+  json_halt 400, 'User already exists' if user
 
-  token = ConfirmationToken.where(number: params[:number], value: params[:token]).first
-  json_halt 500, 'Invalid token' unless token
+  user = User.new(params)
+  user.number = params[:number]
 
-  passwordsMatch = (params[:password] == params[:password_confirm])
-  json_halt 500, 'Passwords dont match' unless passwordsMatch
-
-  user = User.create(
-    number:   params[:number],
-    name:     params[:name],
-    email:    params[:email],
-    bio:      params[:bio],
-    password: password_digest(params[:password])
-  )
+  unless user.save
+    json_error errors: user.errors.as_json
+  end
 
   session[:uid] = user._id
 
-  token.delete
+  json success: true
 end
 
-get '/api/shortcodes' do
-  codes =  Shortcode.all.map{|s| s.as_json }.to_a
+get '/api/my-shortcodes' do
+  codes =  Shortcode.where(owner_id: @user._id).all.map{|s| s.as_json }.to_a
   puts codes.inspect
   json codes
 end
 
-get '/api/shortcodes/:number' do
-  s = Shortcode.where(number: params[:number], created_by: @user._id).first
+get '/api/my-shortcodes/:number' do
+  s = Shortcode.where(number: params[:number], owner_id: @user._id).first
   json_halt 404, 'Not found' unless s
-  json s
+  json s.as_json
 end
 
-post '/api/shortcodes/create' do
-  # FIXME: Validate 
-  # FIXME: Verify uniqueness
-  s = Shortcode.create(
-    name:        params[:name],
-    description: params[:description],
-    number:      "#{params[:numberPrefix]}#{params[:number]}",
-    url:         params[:url],
-    created_by:  @user._id # FIXME: DBRef that
-  )
-  json success: true, number: s.number
+post '/api/my-shortcodes' do
+  data = JSON.parse(request.body.read)
+  s = Shortcode.new
+  s.number = data['number']
+  s.owner_id = @user._id
+  s.attributes = {
+    name:        data['name'],
+    description: data['description'],
+    url:         data['url'],
+  }
+
+  if s.save
+    json success: true, number: s.number
+  else
+    json_error errors: s.errors.as_json
+  end
 end
 
-put '/api/shortcodes/:id' do
-
+put '/api/my-shortcodes/:number' do
+  data = JSON.parse(request.body.read)
+  Shortcode.where(number: params[:number], owner_id: @user._id).update(data)
+  json success: true
 end
 
-delete '/api/shortcodes/:id' do
-  s = Shortcode.find(params[:id])
-  json :success => s.delete
+delete '/api/my-shortcodes/:number' do
+  # FIXME: Verify ID!
+  s = Shortcode.where(number: params[:number], owner_id: @user._id).first()
+  json_halt 404, 'not found' unless s
+  if s.delete
+    json :success => true
+  else
+    json_halt 400, 'failed to delete'
+  end
 end
 
 get '*' do

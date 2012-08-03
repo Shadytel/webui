@@ -14,10 +14,62 @@
     <script type="text/javascript" src="/js/backbone-min.js"></script>
     <script type="text/javascript" src="/js/ICanHaz.min.js"></script>
     <script type="text/javascript" src="/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/js/bootstrap-transition.js"></script>
     <script type="text/javascript" src="/js/shady.js"></script>
 
     <script type="text/html" id="StatusView">
       <p>Put network status here</p>
+    </script>
+
+    <script type="text/html" id="DirectoryView">
+      <div class="row">
+        <div class="span3">
+          <div class="well">
+            <h4>Get listed in the directory!</h4>
+            <p><a href="/account">Create an account</a> to claim your Shadytel number and create a profile!</p>
+          </div>
+        </div>
+        <div class="span9">
+          <div id="subscribers"></div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="SubscriberView">
+      <div class="card span3">
+        <h3>{{name}}</h3>
+        <h4>{{number}}</h4>
+        <p>{{bio}}</p>
+      </div>
+    </script>
+
+    <script type="text/html" id="ShortcodesView">
+      <div class="row">
+        <div class="span3">
+          <div class="well">
+          <h4>Create your own SMS-based shortcode apps!</h4>
+          <ul class="unstyled">
+            <li><a href="/account/shortcodes/new">Register a new shortcode</a></li>
+            <li><a href="/docs/api.html" target="_blank">API documentation</a></li>
+          </ul>
+          </div>
+        </div>
+        <div class="span9">
+          <div id="shortcodes"></div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="ShortcodeView">
+      <div class="card span3">
+        <h3>{{number}}</h3>
+        <h4>{{name}}</h4>
+        <p>{{description}}</p>
+      </div>  
+    </script>
+
+    <script type="text/html" id="SIMAppletsView">
+      <p>Put shit here</p>
     </script>
 
     <script type="text/html" id="LoginView">
@@ -25,9 +77,11 @@
         <div class="span7 register-info">
           <h3>Why register?</h3>
           <ul>
+            <!--
             <li><strong>Send and receive SMSs</strong> from the web.</li>
             <li>Listen to your <strong>voicemail</strong> messages.</li>
-            <li>Create SMS apps using our <strong>shortcode API</strong>.</li>
+            -->
+            <li>Create SMS-based apps using our <strong>shortcode API</strong>.</li>
             <li>Get listed in the <strong>subscriber directory</strong>.</li>
           </ul>
           <p>
@@ -85,43 +139,54 @@
 
         <fieldset>
           <legend>Create a password</legend>
-          <div class="control-group">
-            <label class="control-label">Enter Password</label>
-            <div class="controls">
-              <input type="password" name="password">
-            </div>
-          </div>
-          <div class="control-group">
-            <label class="control-label">Confirm Password</label>
-            <div class="controls">
-              <input type="password" name="password_confirm">
-            </div>
-          </div>
+          {{>PasswordFields}}
         </fieldset>
 
         <fieldset>
           <legend>Create a public directory profile (optional)</legend> 
-          <div class="control-group">
-            <label class="control-label">Name</label>
-            <div class="controls">
-              <input type="text" name="name">
-            </div>
-          </div>
-          <div class="control-group">
-            <label class="control-label" name="email">Email</label>
-            <div class="controls">
-              <input type="text" name="email">
-            </div>
-          </div>
-          <div class="control-group">
-            <label class="control-label" name="bio">Bio</label>
-            <div class="controls">
-              <textarea></textarea>
-            </div>
-          </div>
+          {{>ProfileFields}}
         </fieldset>
-        <p><button type="submit" class="btn btn-primary submit">Create Account</button></p>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary submit">Create Account</button>
+        </div>
       </form>
+    </script>
+
+    <script type="text/html" id="ProfileFields" class="partial">
+      <div class="control-group">
+        <label class="control-label" for="name">Name</label>
+        <div class="controls">
+          <input type="text" name="name" id="name" value="{{name}}">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="email">Email</label>
+        <div class="controls">
+          <input type="text" name="email" id="email" value="{{email}}">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="bio">Bio</label>
+        <div class="controls">
+          <textarea name="bio" id="bio">{{bio}}</textarea>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="PasswordFields" class="partial">
+      <div class="control-group">
+        <label class="control-label" for="password">New Password</label>
+        <div class="controls">
+          <input type="password" name="password" id="password">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="password_confirm">Confirm New Password</label>
+        <div class="controls">
+          <input type="password" name="password_confirmation" id="password_confirm">
+        </div>
+      </div>
     </script>
 
     <script type="text/html" id="AccountView">
@@ -136,8 +201,10 @@
             <li><a href="#">Voicemail</a></li>
             <li><a href="#">SMS Inbox</a></li>
             -->
-            <li id="apps"><a href="/account/apps">My Shortcode Apps</a></li>
+            <li id="apps"><a href="/account/shortcodes">My Shortcodes</a></li>
+            <!--
             <li id="applets"><a href="/account/applets">My SIM Applets</a></li>
+            -->
             <li id="profile"><a href="/account/profile">Edit Profile</a></li>
           </ul>
         </div>
@@ -147,8 +214,8 @@
     </script>
 
     <script type="text/html" id="AccountAppsView">
-      <h3>My Shortcode Apps</h3>
-      <p><button class="btn" id="new-shortcode">New Shortcode</button></p>
+      <h3>My Shortcodes</h3>
+      <p><button class="btn" id="new-shortcode">Register a new Shortcode</button></p>
       <table class="table table-bordered table-striped" id="apps-table">
         <thead>
           <tr>
@@ -163,45 +230,85 @@
     </script>
 
     <script type="text/html" id="AccountProfileView">
-      <h3>Edit Profile</h3>
+      <form class="form-horizontal">
+        <h3>Edit Profile</h3>
+        <fieldset>
+          <legend>Public directory profile (optional)</legend> 
+          {{>ProfileFields}}
+        </fieldset>
+
+        <fieldset>
+          <legend>Change password (leave blank to keep the same)</legend>
+          <div class="control-group">
+            <label class="control-label" for="existing_password">Existing Password</label>
+            <div class="controls">
+              <input type="password" name="existing_password" id="existing_password">
+            </div>
+          </div>
+          {{>PasswordFields}}
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary submit" id="update">Update Account</button>
+          <button type="submit" class="btn" id="cancel">Cancel</button>
+        </div>
     </script>
 
     <script type="text/html" id="NewShortcodeView">
-      <h3>New Shortcode App</h3>
+      <h3>Register a new Shortcode</h3>
       <form class="form-horizontal">
-        <div class="control-group">
-          <label class="control-label" for="name">App Name:</label>
-          <div class="controls">
-            <input type="text" name="name" id="name">
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="description">App Description:</label>
-          <div class="controls">
-            <textarea name="description" id="description" />
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="number">Shortcode:</label>
-          <div class="controls">
-            <select class="input-mini" name="numberPrefix">
-              <option>2</option>
-              <option>4</option>
-            </select>
-            -
-            <input type="text" placeholder="1234" class="input-mini" name="number" id="number">
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label" for="url">Callback URL:</label>
-          <div class="controls">
-            <input type="text" class="input-xlarge" name="url" id="url" placeholder="http://">
-            <p class="help-block">This url will be called blah blah</p>
-          </div>
-        </div>
+        {{>ShortcodeFormPartial}}
         <div class="form-actions">
-          <button class="btn btn-primary" id="create">Create App</button>
-          <button class="btn">Cancel</button>
+          <button class="btn btn-primary" id="create">Register Shortcode</button>
+          <button class="btn cancel">Cancel</button>
+        </div>
+      </form>
+    </script>
+
+    <script type="text/html" id="ShortcodeFormPartial" class="partial">  
+      <div class="control-group">
+        <label class="control-label" for="name">App Name:</label>
+        <div class="controls">
+          <input type="text" name="name" id="name" value="{{name}}">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="description">App Description:</label>
+        <div class="controls">
+          <textarea name="description" id="description">{{description}}</textarea>
+          <p class="help-block help">Include instructions on how to use this shortcode service.</p>
+        </div>
+      </div>
+      {{^number}}
+      <div class="control-group">
+        <label class="control-label" for="number">Shortcode:</label>
+        <div class="controls">
+          <select class="input-mini" name="number_prefix">
+            <option>2</option>
+            <option>4</option>
+          </select>
+          -
+          <input type="text" placeholder="1234" class="input-mini" name="number" id="number">
+        </div>
+      </div>
+      {{/number}}
+      <div class="control-group">
+        <label class="control-label" for="url">Callback URL:</label>
+        <div class="controls">
+          <input type="text" class="input-xlarge" name="url" id="url" placeholder="http://" value="{{url}}">
+          <p class="help-block help">A POST request will be sent to this URL for every incoming SMS. More info in the <a href="/shortcodes/api">API docs</a>.</p>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="EditMyShortcodeView">
+      <h3>Edit Shortcode: {{number}}</h3>
+      <form class="form-horizontal">
+        {{>ShortcodeFormPartial}}
+        <div class="form-actions">
+          <button class="btn btn-primary" id="update">Update Shortcode</button>
+          <button class="btn btn-danger" id="delete">Delete Shortcode</button>
+          <button class="btn" id="cancel">Cancel</button>
         </div>
       </form>
     </script>
@@ -215,8 +322,8 @@
       <div class="container">
         <ul class="nav nav-tabs" id="main-nav">
           <li id="status"><a href="/status">Network Status</a></li>
-          <li id="shortcodes"><a href="/shortcodes">Shortcode Directory</a></li>
           <li id="directory"><a href="/directory">Subscriber Directory</a></li>
+          <li id="shortcodes"><a href="/shortcodes">Shortcodes</a></li>
           <li id="applets"><a href="/applets">SIM Applets</a></li>
           <li id="account"><a href="/account">My Account</a></li>
         </ul>

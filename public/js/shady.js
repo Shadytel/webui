@@ -11,19 +11,19 @@ function setAccountView(subView) { // FIXME: Move this
 
 var ShadyRouter = Backbone.Router.extend({
   routes: {
-    '':                     'status',
-    'status':               'status',
-    'shortcodes':           'shortcodes',
-    'directory':            'directory',
-    'applets':              'applets',
-    'account':              'accountApps',
-    'account/login':        'accountLogin',
-    'account/register':     'accountRegister',
-    'account/apps':         'accountApps',
-    'account/applets':      'accountApplets',
-    'account/apps/new':     'accountAppsNew',
-    'account/apps/:number': 'accountApp',
-    'account/profile':      'accountProfile'
+    '':                           'status',
+    'status':                     'status',
+    'shortcodes':                 'shortcodes',
+    'directory':                  'directory',
+    'applets':                    'applets',
+    'account':                    'accountApps',
+    'account/login':              'accountLogin',
+    'account/register':           'accountRegister',
+    'account/shortcodes':         'accountApps',
+    'account/shortcodes/new':     'accountAppsNew',
+    'account/shortcodes/:number': 'accountApp',
+    'account/applets':            'accountApplets',
+    'account/profile':            'accountProfile'
   },
 
   status: function() {
@@ -63,8 +63,8 @@ var ShadyRouter = Backbone.Router.extend({
   },
 
   accountApp: function(number) {
-    var shortcode = new Shortcode(number);
-    setAccountView(new ShortcodeView({ model: shortcode }));
+    var shortcode = new MyShortcode({ number: number });
+    setAccountView(new EditMyShortcodeView({ model: shortcode }));
   },
 
   accountProfile: function() {
@@ -72,19 +72,42 @@ var ShadyRouter = Backbone.Router.extend({
   }
 });
 
+var MyShortcode = Backbone.Model.extend({
+  idAttribute: 'number',
+  urlRoot:     '/api/my-shortcodes',
+
+  isNew: function() {
+    return this._isNew;
+  }
+});
+
+var Subscriber = Backbone.Model.extend({
+});
+
+var SubscriberList = Backbone.Collection.extend({
+  model: Subscriber,
+  url: '/api/subscribers'
+});
+
 var Shortcode = Backbone.Model.extend({
 });
 
 var ShortcodeList = Backbone.Collection.extend({
-  model: Shortcode,
+  model: Subscriber,
   url: '/api/shortcodes'
+});
+
+var MyShortcodeList = Backbone.Collection.extend({
+  model: MyShortcode,
+  url: '/api/my-shortcodes'
 });
 
 var ShortcodeRowView = Backbone.View.extend({
   tagName: 'tr',
+  className: 'my-shortcode',
 
   events: {
-
+    'click': 'open'
   },
 
   initialize: function() {
@@ -93,8 +116,17 @@ var ShortcodeRowView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el.html('<td>foo</td>');
+    this.$el
+      .append($('<td>').html(this.model.get('number')))
+      .append($('<td>').html(this.model.get('name')))
+      .append($('<td>').html(this.model.get('description')))
+      .append($('<td>').html(this.model.get('url')));
     return this;
+  },
+
+  open: function() {
+    router.navigate('/account/shortcodes/' + this.model.get('number'), { trigger: true });
+    return false;
   }
 });
 
@@ -137,6 +169,19 @@ var AppView = Backbone.View.extend({
   hideLoading: function() {
     $('.loading').spin(false);
     $('.loading').hide();
+  },
+
+  showSuccessAlert: function(message) {
+    var flash = $('#content .alert-success');
+    if (flash.length == 0) {
+      flash = $('<div>').addClass('alert').addClass('alert-success').addClass('fade').addClass('in');
+      flash.append($('<span>').addClass('message').html(message));
+      flash.append($('<a class="close" data-dismiss="alert" href="#">×</a>'));
+      $('#content').prepend(flash);
+      flash.alert();
+    } else {
+      flash.find('.message').html(message);
+    }
   }
 });
 
@@ -152,18 +197,62 @@ var StatusView = Backbone.View.extend({
 var DirectoryView = Backbone.View.extend({
   mainNavId: 'directory',
 
+  initialize: function() {
+    this.$el.html(ich.DirectoryView());
+
+    var self = this;
+    this.subscribers = new SubscriberList();
+    this.subscribers.fetch({
+      success: function() {
+        self.render();
+      }, 
+      error: function() {
+        alert('oshit');
+      }
+    })
+  },
+
   render: function() {
-    this.$el.html('Put subscriber directory here');
+    this.$('#subscribers').addRows(this.subscribers, function(subscriber) {
+      return ich.SubscriberView(subscriber.attributes);
+    }, 4);
     return this;
   }
 });
 
 var ShortcodesView = Backbone.View.extend({
-  mainNavId: 'shortcodes'
+  mainNavId: 'shortcodes',
+
+  initialize: function() {
+    this.$el.html(ich.ShortcodesView());
+
+    var self = this;
+    this.shortcodes = new ShortcodeList();
+    this.shortcodes.fetch({
+      success: function() {
+        self.render();
+      }, 
+      error: function() {
+        alert('oshit');
+      }
+    })
+  },
+
+  render: function() {
+    this.$('#shortcodes').addRows(this.shortcodes, function(shortcode) {
+      return ich.ShortcodeView(shortcode.attributes);
+    }, 4);
+    return this;
+  }
 })
 
 var SIMAppletsView = Backbone.View.extend({
-  mainNavId: 'applets'
+  mainNavId: 'applets',
+
+  render: function() {
+    this.$el.html(ich.SIMAppletsView());
+    return this;
+  }
 });
 
 var AccountView = Backbone.View.extend({
@@ -216,25 +305,27 @@ var AccountView = Backbone.View.extend({
 
   updateUser: function() {
     var self = this;
-    $.get('/api/me', function(data) {
-      app.user = data.user;
-      self.render();
-    })
-    .error(function() {
-      app.user = null;
-      self.showLogin();
+    $.jsonGet('/api/me', function(success, data) {
+      if (success) {
+        app.user = data.user;
+        self.render();
+      } else {
+        app.user = null;
+        self.showLogin();
+      }
     });
   },
 
   logout: function() {
     var self = this;
 
-    $.post('/api/logout', function() {
-      app.user = null;
-      self.showLogin();
-    })
-    .error(function() {
-      alert('error');
+    $.jsonPost('/api/logout', null, function(success, jsonResponse) {
+      if (success) {
+        app.user = null;
+        self.showLogin();
+      } else {
+        alert('Error logging out.');
+      }
     });
     return false;
   },
@@ -255,24 +346,12 @@ var AccountShortcodesView = Backbone.View.extend({
   initialize: function() {
     this.$el.html(ich.AccountAppsView({ user: app.user }));
 
-    this.shortcodes = new ShortcodeList();
+    this.shortcodes = new MyShortcodeList();
     this.shortcodes.bind('add',   this.addOne, this);
     this.shortcodes.bind('reset', this.addAll, this);
     this.shortcodes.bind('all',   this.render, this);
 
-    this.shortcodes.fetch({
-      success: function (collection, response) {
-        // FIXME: Hide loading
-        // FIXME: Show content
-      },
-      error: function (collection, response) {
-        if (response.status == 401) {
-          app.setView(new LoginView());
-        } else {
-          alert('error');
-        }
-      }
-    });
+    this.shortcodes.fetch();
   },
 
   render: function() {
@@ -289,23 +368,8 @@ var AccountShortcodesView = Backbone.View.extend({
     this.shortcodes.each(this.addOne);
   },
 
-  loadShortcodes: function() {
-    this.shortcodes.fetch({ 
-      success: function (collection, response) {
-        // FIXME: Hide loading
-        // FIXME: Show content
-      },
-      error: function (collection, response) {
-        alert('aahahh');
-        if (response.status == 401) {
-          // FIXME
-        }
-      }
-    });
-  },
-
   newShortcode: function() {
-   router.navigate('/account/apps/new', { trigger: true });
+   router.navigate('/account/shortcodes/new', { trigger: true });
   }
 });
 
@@ -316,10 +380,47 @@ var AccountAppletsView = Backbone.View.extend({
 var AccountProfileView = Backbone.View.extend({
   accountNavId: 'profile',
 
+  events: {
+    'click #update': 'update',
+    'click #cancel': 'cancel'
+  },
+
+  initialize: function() {
+    var self = this;
+    $.jsonGet('/api/me', function(success, data) {
+      if (success) {
+        self.user = data.user;
+        self.render();
+      } else {
+        alert('error!!'); // FIXME
+      }
+    });
+  },
+
   render: function() {
-    this.$el.html(ich.AccountProfileView({ user: app.user }));
-    this.$el.find('.nav li#profile').addClass('active');
+    if (this.user) {
+      this.$el.html(ich.AccountProfileView(this.user));
+      this.$el.find('.nav li#profile').addClass('active');
+    }
     return this;
+  },
+
+  update: function() {
+    var params = this.$el.find('form').serializeObject();
+    $.jsonPut('/api/me', params, function(success, data, request) {
+      if (success) {
+        app.showSuccessAlert('Profile updated!');
+        router.navigate('/account', { trigger: true });
+      } else {
+        this.$('form').showValidationErrors(request);
+      }
+    });
+    return false;
+  },
+
+  cancel: function() {
+    router.navigate('/account', { trigger: true });
+    return false;
   }
 });
 
@@ -347,16 +448,20 @@ var LoginView = Backbone.View.extend({
   login: function() {
     var params = this.$el.find('form').serializeObject();
 
-    $.post('/api/login', params, function(data) {
-      app.user = data.user;
+    $.jsonPost('/api/login', params, function(success, data) {
+      if (success) {
+        app.user = data.user;
 
-      var returnTo = (app.returnTo) ? app.returnTo : '/account';
-      router.navigate(returnTo, { trigger: true });
+        var returnTo = (app.returnTo) ? app.returnTo : '/account';
+        router.navigate(returnTo, { trigger: true });
 
-      app.returnTo = null;
+        app.returnTo = null;
 
-    }).error(function() {
-      alert('Login Failed');
+      } else {
+        alert('Invalid username or password.');
+        this.$('input[name=password]').val('');
+        this.$('input[name=password]').focus();
+      }
     });
     return false;
   },
@@ -382,11 +487,12 @@ var AccountVerifyView = Backbone.View.extend({
     var self = this;
 
     var params = { number: this.$el.find('.phone').val() };
-    $.post('/api/send_code', params, function() {
-      app.setView(new AccountRegisterView({ attributes: params }));
-    })
-    .error(function(req, status, err) {
-      alert(req.responseText); // FIXME
+    $.jsonPost('/api/send_code', params, function(success, data) {
+      if (success) {
+        app.setView(new AccountRegisterView({ attributes: params }));
+      } else {
+        alert(data.message);
+      }
     });
 
     return false;
@@ -407,11 +513,12 @@ var AccountRegisterView = Backbone.View.extend({
 
   register: function() {
     var params = this.$el.find('form').serializeObject();
-    $.post('/api/register', params, function() {
-      router.navigate('account', { trigger: true });
-    })
-    .error(function(req, status, err) {
-      alert('failed!');
+    $.jsonPost('/api/register', params, function(success, data, request) {
+      if (success) {
+        router.navigate('account', { trigger: true });
+      } else {
+        this.$('form').showValidationErrors(request);
+      }
     });
     return false;
   },
@@ -426,17 +533,27 @@ var NewShortcodeView = Backbone.View.extend({
   accountNavId: 'apps',
 
   events: {
-    'click #create': 'createApp'
+    'click #create': 'createApp',
+    'click .cancel': 'cancel'
   },
 
   createApp: function() {
+    var self = this;
+
     var params = this.$el.find('form').serializeObject();
-    $.post('/api/shortcodes/create', params, function(response) {
-      // FIXME: Show an "app was created!" flash message
-      router.navigate('/account/apps/' + response.number);
-    })
-    .error(function(req, status, err) {
-      alert('failed!');
+    params.number = params.number_prefix + params.number;
+    delete params.number_prefix;
+
+    var shortcode = new MyShortcode(params);
+    shortcode._isNew = true; // FIXME
+    shortcode.save(null, {
+      success: function(model, response) {
+        app.showSuccessAlert('Shortcode created!');
+        router.navigate('/account/shortcodes', { trigger: true });
+      }, 
+      error: function(model, response) {
+        this.$('form').showValidationErrors(response);
+      }
     });
     return false;
   },
@@ -444,18 +561,74 @@ var NewShortcodeView = Backbone.View.extend({
   render: function() {
     this.$el.html(ich.NewShortcodeView());
     return this;
+  },
+
+  cancel: function() {
+    router.navigate('/account/shortcodes', { trigger: true });
+    return false;
   }
 });
 
-var ShortcodeView = Backbone.View.extend({
+var EditMyShortcodeView = Backbone.View.extend({
   accountNavId: 'apps',
 
   events: {
+    'click #update': 'updateShortcode',
+    'click #delete': 'deleteShortcode',
+    'click #cancel': 'cancel'
+  },
 
+  initialize: function() {
+    var self = this;
+    this.model.fetch({ 
+      success: function() {
+        self.modelFetched = true;
+        self.render();
+      }
+    });
+  },
+
+  updateShortcode: function() {
+    var self = this;
+
+    var params = this.$el.find('form').serializeObject();
+    this.model.save(params, {
+      success: function(model, response) {
+        app.showSuccessAlert('Shortcode updated!');
+        router.navigate('/account/shortcodes', { trigger: true });
+      }, 
+      error: function(model, response) {
+        this.$('form').showValidationErrors(response);
+      }
+    });
+    return false;
+  },
+
+  deleteShortcode: function() {
+    if (confirm("Are you sure?")) {
+      this.model.destroy({
+        success: function() {
+          app.showSuccessAlert('Shortcode deleted.');
+          router.navigate('/account/shortcodes', { trigger: true });
+        },
+        error: function(model, response) {
+          alert('Failed to delete');
+        }
+      });
+    }
+    return false;
   },
 
   render: function() {
-    this.$el.html(ich.ShortcodeView(this.attributes));
+    if (this.modelFetched) {
+      this.$el.html(ich.EditMyShortcodeView(this.model.attributes));
+    }
+    return this;
+  },
+
+  cancel: function() {
+    router.navigate('/account/shortcodes', { trigger: true });
+    return false;
   }
 });
 
@@ -467,12 +640,62 @@ $(document).ajaxStart(function() {
 $(document).ajaxComplete(function() {
   window.app.hideLoading();
 });
+$(document).ajaxError(function(e, jqxhr, settings, exception) {
+  if (jqxhr.status == 401) {
+    if (!(app.currentView instanceof LoginView)) {
+      app.setView(new LoginView());
+    }
+  } else if (jqxhr.status == 500) {
+    alert("Application error.");
+  }
+});
+
 
 $(function () {
   window.router = new ShadyRouter();
   window.app    = new AppView();  
   Backbone.history.start({ pushState: true });
 });
+
+jQuery.fn.addRows = function(models, viewFunc, numCols) {
+  var self = this;
+  $(this).empty();
+  var row;
+  var i = 0;
+  models.each(function (model) {
+    if ((i % numCols) == 0) {
+      row = $('<div>').addClass('row-fluid');
+      $(self).append(row);
+    }
+    row.append(viewFunc(model));
+    i++;
+  });
+  $(this).pintristify();
+  return this;
+};
+
+jQuery.fn.pintristify = function() {
+  var self = this;
+  var go = function() {
+    var lastRowHeights = {};
+    $('.row, .row-fluid', this).each(function(rowIndex, row) {
+      var rowHeights = {};
+      $(row).children().each(function(childIndex, child) {
+        if ($(child).css('float') != 'none' && lastRowHeights[childIndex]) {
+          $(child)
+            .css('position', 'relative')
+            .css('top', '-' + (lastRowHeights[childIndex] * rowIndex) + 'px');
+        } else {
+          $(child).css('position', null).css('top', null);
+        }
+        rowHeights[childIndex] = $(row).outerHeight() - $(child).outerHeight({ includeMargin: true });
+      });
+      lastRowHeights = rowHeights;
+    });
+  }
+  go.apply(self);
+  $(window).resize(function() { go.apply(self); });
+}
 
 jQuery.fn.serializeObject = function() {
   var arrayData, objectData;
@@ -501,3 +724,80 @@ jQuery.fn.serializeObject = function() {
 
   return objectData;
 };
+
+jQuery.fn.showValidationErrors = function(response) {
+  $('.control-group.error', this).removeClass('error');
+  $('.help-inline.error', this).remove();
+
+  var self = this;
+
+  if (response.getResponseHeader('Content-Type') === 'application/json') {
+    var json = JSON.parse(response.responseText);
+
+    // FIXME: If no errors... show alert...
+
+    _.each(json.errors, function(errors, name) {
+      var group = $('[name=' + name + ']', self).closest('.control-group');
+      group.addClass('error');
+      group.find('.controls input, .controls textarea').last().after($('<span>').addClass('help-inline').addClass('error').html(errors.join(', ')));
+    });
+
+  } else {
+    alert('error'); // FIXME
+  }
+};
+
+(function($) {
+  // FIXME: DRY...
+
+  $.jsonGet = function(url, callback) {
+    $.jsonRequest({
+      url:      url,
+      type:    'GET',
+      success: function(jsonResponse) { callback(true,  jsonResponse); },
+      error:   function(jsonResponse, request) { callback(false, jsonResponse, request); }
+    });
+  };
+
+  $.jsonPost = function(url, data, callback) {
+    $.jsonRequest({
+      url:     url,
+      type:    'POST',
+      data:    data,
+      success: function(jsonResponse) { callback(true,  jsonResponse); },
+      error:   function(jsonResponse, request) { callback(false, jsonResponse, request); }
+    });
+  };
+
+  $.jsonPut = function(url, data, callback) {
+    $.jsonRequest({
+      url:     url,
+      type:    'PUT',
+      data:    data,
+      success: function(jsonResponse) { callback(true,  jsonResponse); },
+      error:   function(jsonResponse, request) { callback(false, jsonResponse, request); }
+    });
+  };
+
+  $.jsonRequest = function(options){
+    var successCb = options.success;
+    var errorCb   = options.error;
+
+    options.success = function(jsonResponse){
+      // FIXME: Nothing else to do here?
+      successCb(jsonResponse);
+    };
+    
+    options.error = function(request, textStatus){
+      if (request.getResponseHeader('Content-Type') === 'application/json') {
+        var jsonResponse = JSON.parse(request.responseText);
+        errorCb(jsonResponse, request);
+      } else {
+        errorCb(null, request);
+      }
+    };
+    
+    $.ajax(options);
+  };
+})(jQuery);
+
