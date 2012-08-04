@@ -689,20 +689,23 @@ jQuery.fn.addRows = function(models, viewFunc, numCols) {
 jQuery.fn.pintristify = function() {
   var self = this;
   var go = function() {
-    var lastRowHeights = {};
+    var childOffsets = {};
     $('.row, .row-fluid', this).each(function(rowIndex, row) {
-      var rowHeights = {};
       $(row).children().each(function(childIndex, child) {
-        if ($(child).css('float') != 'none' && lastRowHeights[childIndex]) {
+        if ($(child).css('float') != 'none' && childOffsets[childIndex]) {
           $(child)
             .css('position', 'relative')
-            .css('top', '-' + (lastRowHeights[childIndex] * rowIndex) + 'px');
+            .css('top', '-' + (childOffsets[childIndex] /* ?? */) + 'px');
         } else {
           $(child).css('position', '').css('top', '');
         }
-        rowHeights[childIndex] = $(row).outerHeight() - $(child).outerHeight({ includeMargin: true });
+        var offset = $(row).outerHeight() - $(child).outerHeight({ includeMargin: true });
+        if (!childOffsets[childIndex]) {
+          childOffsets[childIndex] = offset;
+        } else {
+          childOffsets[childIndex] += offset;
+        }
       });
-      lastRowHeights = rowHeights;
     });
   }
   go.apply(self);
@@ -818,7 +821,6 @@ function addFilters(obj) {
     simple_format: function() {
       var data = this;
       return function(text) {
-        console.log(text, data);
         return simpleFormat(Mustache.render(text, data));
       }
     }
