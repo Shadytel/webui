@@ -70,3 +70,11 @@ legend {
     *width: 23.0237315876383%;
   }
 }
+
+.email {
+  font-size: small;
+  opacity: 0.3;
+}
+.email:hover {
+  opacity: 1;
+}

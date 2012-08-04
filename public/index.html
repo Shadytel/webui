@@ -40,7 +40,12 @@
 
     <script type="text/html" id="SubscriberView">
       <div class="card span3">
-        <h3>{{name}}</h3>
+        <h3>
+          {{name}}
+          {{#email}}
+            <span class="email"><a href="mailto:{{email}}"><i class="icon icon-envelope"/></a></span>
+          {{/email}}
+        </h3>
         <h4>{{number}}</h4>
         <p>{{bio}}</p>
       </div>
