@@ -119,7 +119,7 @@ var ShortcodeRowView = Backbone.View.extend({
     this.$el
       .append($('<td>').text(this.model.get('number')))
       .append($('<td>').text(this.model.get('name')))
-      .append($('<td>').text(this.model.get('description')))
+      .append($('<td>').html(simpleFormat(_.escape(this.model.get('description')))))
       .append($('<td>').text(this.model.get('url')));
     return this;
   },
@@ -243,7 +243,7 @@ var ShortcodesView = Backbone.View.extend({
 
   render: function() {
     this.$('#shortcodes').addRows(this.shortcodes, function(shortcode) {
-      return ich.ShortcodeView(shortcode.attributes);
+      return ich.ShortcodeView(addFilters(shortcode.attributes));
     }, 4);
     return this;
   }
@@ -813,3 +813,25 @@ jQuery.fn.showValidationErrors = function(response) {
   };
 })(jQuery);
 
+function addFilters(obj) {
+  return _.extend(obj, {
+    simple_format: function() {
+      var data = this;
+      return function(text) {
+        console.log(text, data);
+        return simpleFormat(Mustache.render(text, data));
+      }
+    }
+  });
+}
+
+function simpleFormat(str) {
+  str = str.replace(/\r\n?/, "\n");
+  str = $.trim(str);
+  if (str.length > 0) {
+    str = str.replace(/\n\n+/g, '</p><p>');
+    str = str.replace(/\n/g, '<br />');
+    str = '<p>' + str + '</p>';
+  }
+  return str;
+}

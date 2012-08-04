@@ -12,7 +12,8 @@
     <script type="text/javascript" src="/js/jquery.spin.js"></script>
     <script type="text/javascript" src="/js/underscore-min.js"></script>
     <script type="text/javascript" src="/js/backbone-min.js"></script>
-    <script type="text/javascript" src="/js/ICanHaz.min.js"></script>
+    <script type="text/javascript" src="/js/mustache.js"></script>
+    <script type="text/javascript" src="/js/ICanHaz-no-mustache.min.js"></script>
     <script type="text/javascript" src="/js/bootstrap.js"></script>
     <script type="text/javascript" src="/js/bootstrap-transition.js"></script>
     <script type="text/javascript" src="/js/shady.js"></script>
@@ -64,7 +65,9 @@
       <div class="card span3">
         <h3>{{number}}</h3>
         <h4>{{name}}</h4>
-        <p>{{description}}</p>
+        {{#simple_format}}
+          {{description}}
+        {{/simple_format}}
       </div>  
     </script>
 
