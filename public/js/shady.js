@@ -116,11 +116,8 @@ var ShortcodeRowView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el
-      .append($('<td>').text(this.model.get('number')))
-      .append($('<td>').text(this.model.get('name')))
-      .append($('<td>').html(simpleFormat(_.escape(this.model.get('description')))))
-      .append($('<td>').text(this.model.get('url')));
+    this.$el.empty();
+    this.$el.append(ich.ShortcodeRowView(this.model.attributes));
     return this;
   },
 
@@ -357,7 +354,13 @@ var AccountShortcodesView = Backbone.View.extend({
     this.shortcodes.bind('reset', this.addAll, this);
     this.shortcodes.bind('all',   this.render, this);
 
-    this.shortcodes.fetch();
+    this.shortcodes.fetch({
+      success: function() {
+      },
+      error: function() {
+        alert('error');
+      }
+    });
   },
 
   render: function() {
@@ -749,17 +752,22 @@ jQuery.fn.showValidationErrors = function(response) {
   if (response.getResponseHeader('Content-Type') === 'application/json') {
     var json = JSON.parse(response.responseText);
 
-    // FIXME: If no errors... show alert...
-
+    var foundInput = false;
     _.each(json.errors, function(errors, name) {
       var group = $('[name=' + name + ']', self).closest('.control-group');
       group.addClass('error');
       group.find('.controls input, .controls textarea').last().after($('<span>').addClass('help-inline').addClass('error').text(errors.join(', ')));
+      if (group.length > 0) {
+        foundInput = true;
+      }
     });
 
-  } else {
-    alert('error'); // FIXME
+    if (foundInput) {
+      return;
+    }
   }
+
+  alert('error'); // FIXME
 };
 
 (function($) {

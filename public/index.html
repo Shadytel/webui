@@ -225,9 +225,10 @@
         <thead>
           <tr>
             <th>Number</th>
-            <th>App Name</th>
-            <th>App Description</th>
-            <th>App URL</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>API Keys</th>
+            <th>Callback URL</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -289,8 +290,9 @@
         <label class="control-label" for="number">Shortcode:</label>
         <div class="controls">
           <select class="input-mini" name="number_prefix">
-            <option>2</option>
+            <option>3</option>
             <option>4</option>
+            <option>5</option>
           </select>
           -
           <input type="text" placeholder="1234" class="input-mini" name="number" id="number">
@@ -316,6 +318,21 @@
           <button class="btn" id="cancel">Cancel</button>
         </div>
       </form>
+    </script>
+
+    <script type="text/html" id="ShortcodeRowView">
+      <td>{{number}}</td>
+      <td>{{name}}</td>
+      <td>{{description}}</td>
+      <td>
+        <dl class="dl" style="margin: 0">
+          <dt>Key</dt>
+          <dd>{{api_key}}</dd>
+          <dt>Secret</dt>
+          <dd>{{api_secret}}</dd>
+        </dl>
+      </td>
+      <td>{{url}}</td>
     </script>
   </head>
 

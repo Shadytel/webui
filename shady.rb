@@ -105,39 +105,54 @@ end
 class Shortcode
   include Mongoid::Document
 
-  VALID_PREFIXES = %w(2 4)
+  VALID_PREFIXES = %w(3 4 5)
 
   field :name,        type: String
   field :description, type: String
   field :number,      type: String
   field :url,         type: String
+  field :api_key,     type: String
+  field :api_secret,  type: String
   field :owner_id,    type: Moped::BSON::ObjectId
 
   attr_protected :number
+  attr_protected :api_key
+  attr_protected :api_secret
 
   validates :name,        presence: true, uniqueness: true
   validates :description, presence: true
   validates :url,         presence: true, format: { with: URI::regexp([/^http/, /^https/]) }
   validates :owner_id,    presence: true
   validates :number,      presence: true, uniqueness: true
+  validates :api_key,     presence: true, uniqueness: true
+  validates :api_secret,  presence: true, uniqueness: true
 
   validate :check_number
+
+  before_validation :generate_keys
 
   def as_json
     {
       number:      self.number,
       name:        self.name,
       description: self.description,
-      url:         self.url
+      url:         self.url,
+      api_key:     self.api_key || '',
+      api_secret:  self.api_secret || '',
     }
   end
 
   def build_number(prefix, suffix)
     self.number = "#{prefix}-#{suffix}"
-    puts "built number #{self.number}"
+    puts "built number #{self.number}" # FIXME
   end
 
   private
+
+  def generate_keys
+    self.api_key    = SecureRandom.hex unless self.api_key.present?
+    self.api_secret = SecureRandom.hex unless self.api_secret.present?
+  end
 
   def check_number
     number = self.number.to_i
@@ -153,19 +168,6 @@ end
 
 def json_error(json)
   halt 400, { 'Content-Type' => 'application/json' }, { success: false }.merge(json).to_json
-end
-
-def password_digest(password)
-  ::BCrypt::Password.create("#{password}#{$config[:password_salt]}").to_s
-end
-
-def valid_password?(encrypted_password, password)
-  return false if encrypted_password.blank?
-  bcrypt   = ::BCrypt::Password.new(encrypted_password)
-  password = ::BCrypt::Engine.hash_secret("#{password}#{$config[:password_salt]}", bcrypt.salt)
-  puts "COMPARE " + password + " " + encrypted_password
-  #Devise.secure_compare(password, encrypted_password)
-  password == encrypted_password
 end
 
 set :sessions,       true
@@ -259,7 +261,6 @@ end
 
 get '/api/my-shortcodes' do
   codes =  Shortcode.where(owner_id: @user._id).all.map{|s| s.as_json }.to_a
-  puts codes.inspect
   json codes
 end
 
@@ -289,13 +290,17 @@ end
 
 put '/api/my-shortcodes/:number' do
   data = JSON.parse(request.body.read)
-  Shortcode.where(number: params[:number], owner_id: @user._id).update(data)
-  json success: true
+  s = Shortcode.where(number: params[:number], owner_id: @user._id).first
+  if s.update_attributes(data)
+    json success: true
+  else
+    json_error errors: s.errors.as_json
+  end
 end
 
 delete '/api/my-shortcodes/:number' do
   # FIXME: Verify ID!
-  s = Shortcode.where(number: params[:number], owner_id: @user._id).first()
+  s = Shortcode.where(number: params[:number], owner_id: @user._id).first
   json_halt 404, 'not found' unless s
   if s.delete
     json :success => true
