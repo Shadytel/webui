@@ -49,23 +49,12 @@ legend {
 }
 
 .card {
-  /*width: 150px;*/
-  display: inline-block;
-  vertical-align: top;
-  margin-bottom: 2.762430939%;
-
+  margin-bottom: 15px;
   padding: 15px; 
+  overflow: auto;
   box-shadow: 0 1px 4px rgba(34, 25, 25, 0.4);
   -moz-box-shadow: 0 1px 3px rgba(34,25,25,0.4);
   -webkit-box-shadow: 0 1px 4px rgba(34, 25, 25, 0.4);
-
-
-  /*
-  float: left;
-
-  width: 23.404255317%;
-  *width: 23.3510638276383%;
-  */
 }
 
 @media (min-width: 768px) and (max-width: 979px) {
