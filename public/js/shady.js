@@ -698,7 +698,7 @@ jQuery.fn.pintristify = function() {
             .css('position', 'relative')
             .css('top', '-' + (lastRowHeights[childIndex] * rowIndex) + 'px');
         } else {
-          $(child).css('position', null).css('top', null);
+          $(child).css('position', '').css('top', '');
         }
         rowHeights[childIndex] = $(row).outerHeight() - $(child).outerHeight({ includeMargin: true });
       });
