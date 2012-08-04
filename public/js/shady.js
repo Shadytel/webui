@@ -117,10 +117,10 @@ var ShortcodeRowView = Backbone.View.extend({
 
   render: function() {
     this.$el
-      .append($('<td>').html(this.model.get('number')))
-      .append($('<td>').html(this.model.get('name')))
-      .append($('<td>').html(this.model.get('description')))
-      .append($('<td>').html(this.model.get('url')));
+      .append($('<td>').text(this.model.get('number')))
+      .append($('<td>').text(this.model.get('name')))
+      .append($('<td>').text(this.model.get('description')))
+      .append($('<td>').text(this.model.get('url')));
     return this;
   },
 
@@ -175,12 +175,12 @@ var AppView = Backbone.View.extend({
     var flash = $('#content .alert-success');
     if (flash.length == 0) {
       flash = $('<div>').addClass('alert').addClass('alert-success').addClass('fade').addClass('in');
-      flash.append($('<span>').addClass('message').html(message));
+      flash.append($('<span>').addClass('message').text(message));
       flash.append($('<a class="close" data-dismiss="alert" href="#">×</a>'));
       $('#content').prepend(flash);
       flash.alert();
     } else {
-      flash.find('.message').html(message);
+      flash.find('.message').text(message);
     }
   }
 });
@@ -189,7 +189,8 @@ var StatusView = Backbone.View.extend({
   mainNavId: 'status',
 
   render: function() {
-    this.$el.html(ich.StatusView);
+    this.$el.empty();
+    this.$el.append(ich.StatusView);
     return this;
   }
 });
@@ -198,7 +199,8 @@ var DirectoryView = Backbone.View.extend({
   mainNavId: 'directory',
 
   initialize: function() {
-    this.$el.html(ich.DirectoryView());
+    this.$el.empty(ich.DirectoryView());
+    this.$el.append(ich.DirectoryView());
 
     var self = this;
     this.subscribers = new SubscriberList();
@@ -224,7 +226,8 @@ var ShortcodesView = Backbone.View.extend({
   mainNavId: 'shortcodes',
 
   initialize: function() {
-    this.$el.html(ich.ShortcodesView());
+    this.$el.empty();
+    this.$el.append(ich.ShortcodesView());
 
     var self = this;
     this.shortcodes = new ShortcodeList();
@@ -250,7 +253,8 @@ var SIMAppletsView = Backbone.View.extend({
   mainNavId: 'applets',
 
   render: function() {
-    this.$el.html(ich.SIMAppletsView());
+    this.$el.empty();
+    this.$el.append(ich.SIMAppletsView());
     return this;
   }
 });
@@ -264,7 +268,8 @@ var AccountView = Backbone.View.extend({
   },
 
   initialize: function() {
-    this.$el.html(ich.AccountView);
+    this.$el.empty();
+    this.$el.append(ich.AccountView);
 
     if (!app.user) {
       this.updateUser()
@@ -278,7 +283,7 @@ var AccountView = Backbone.View.extend({
 
   render: function() {
     if (app.user) {
-      this.$el.find('.number').html(app.user.number);
+      this.$el.find('.number').text(app.user.number);
       this.$el.find('#account-view').show();
     }
     return this;
@@ -344,7 +349,8 @@ var AccountShortcodesView = Backbone.View.extend({
   },
 
   initialize: function() {
-    this.$el.html(ich.AccountAppsView({ user: app.user }));
+    this.$el.empty();
+    this.$el.append(ich.AccountAppsView({ user: app.user }));
 
     this.shortcodes = new MyShortcodeList();
     this.shortcodes.bind('add',   this.addOne, this);
@@ -399,7 +405,8 @@ var AccountProfileView = Backbone.View.extend({
 
   render: function() {
     if (this.user) {
-      this.$el.html(ich.AccountProfileView(this.user));
+      this.$el.empty();
+      this.$el.append(ich.AccountProfileView(this.user));
       this.$el.find('.nav li#profile').addClass('active');
     }
     return this;
@@ -441,7 +448,8 @@ var LoginView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el.html(ich.LoginView);
+    this.$el.empty();
+    this.$el.append(ich.LoginView);
     return this;
   },
 
@@ -499,7 +507,8 @@ var AccountVerifyView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el.html(ich.account_verify);
+    this.$el.empty();
+    this.$el.append(ich.account_verify);
     return this;
   }
 });
@@ -524,7 +533,8 @@ var AccountRegisterView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el.html(ich.account_register(this.attributes));
+    this.$el.empty();
+    this.$el.append(ich.account_register(this.attributes));
     return this;
   }
 });
@@ -559,7 +569,8 @@ var NewShortcodeView = Backbone.View.extend({
   },
 
   render: function() {
-    this.$el.html(ich.NewShortcodeView());
+    this.$el.empty();
+    this.$el.append(ich.NewShortcodeView());
     return this;
   },
 
@@ -621,7 +632,8 @@ var EditMyShortcodeView = Backbone.View.extend({
 
   render: function() {
     if (this.modelFetched) {
-      this.$el.html(ich.EditMyShortcodeView(this.model.attributes));
+      this.$el.empty();
+      this.$el.append(ich.EditMyShortcodeView(this.model.attributes));
     }
     return this;
   },
@@ -739,7 +751,7 @@ jQuery.fn.showValidationErrors = function(response) {
     _.each(json.errors, function(errors, name) {
       var group = $('[name=' + name + ']', self).closest('.control-group');
       group.addClass('error');
-      group.find('.controls input, .controls textarea').last().after($('<span>').addClass('help-inline').addClass('error').html(errors.join(', ')));
+      group.find('.controls input, .controls textarea').last().after($('<span>').addClass('help-inline').addClass('error').text(errors.join(', ')));
     });
 
   } else {
