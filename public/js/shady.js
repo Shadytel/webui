@@ -212,8 +212,10 @@ var SubscribersView = Backbone.View.extend({
       success: function() {
         self.render();
       }, 
-      error: function() {
-        alert('oshit');
+      error: function(model, response) {
+        if (response.status != 401 && response.status != 500) {
+          alert('Error loading subscribers.');
+        }
       }
     })
   },
@@ -235,6 +237,11 @@ var SubscriberView = Backbone.View.extend({
       success: function() {
         self.modelFetched = true;
         self.render();
+      }, 
+      error: function(model, response) {
+        if (response.status != 401 && response.status != 500) {
+          alert('Error loading subscriber.');
+        }
       }
     });
   },
@@ -260,9 +267,11 @@ var ShortcodesView = Backbone.View.extend({
     this.shortcodes.fetch({
       success: function() {
         self.render();
-      }, 
-      error: function() {
-        alert('oshit');
+      },
+      error: function(model, response) {
+        if (response.status != 401 && response.status != 500) {
+          alert('Error loading shortcodes.');
+        }
       }
     })
   },
@@ -384,10 +393,10 @@ var AccountShortcodesView = Backbone.View.extend({
     this.shortcodes.bind('all',   this.render, this);
 
     this.shortcodes.fetch({
-      success: function() {
-      },
-      error: function() {
-        alert('error');
+      error: function(model, response) {
+        if (response.status != 401 && response.status != 500) {
+          alert('Error loading shortcodes.');
+        }
       }
     });
   },
@@ -425,6 +434,7 @@ var AccountProfileView = Backbone.View.extend({
 
   initialize: function() {
     var self = this;
+    // FIXME: Use a Subscriber object
     $.jsonGet('/api/me', function(success, data) {
       if (success) {
         self.user = data.user;
@@ -627,6 +637,11 @@ var EditMyShortcodeView = Backbone.View.extend({
       success: function() {
         self.modelFetched = true;
         self.render();
+      }, 
+      error: function(model, response) {
+        if (response.status != 401 && response.status != 500) {
+          alert('Error loading subscribers.');
+        }
       }
     });
   },
@@ -693,7 +708,6 @@ $(document).ajaxError(function(e, jqxhr, settings, exception) {
     alert("Application error.");
   }
 });
-
 
 $(function () {
   window.router = new ShadyRouter();
