@@ -34,6 +34,7 @@ class User
   attr_accessor :password_confirmation
   attr_accessor :existing_password
 
+  before_validation :clean_token
   before_save :prepare_password
   after_create :delete_token
 
@@ -67,6 +68,10 @@ class User
   end
 
   private
+
+  def clean_token
+    self.token = self.token.gsub(/[^0-9a-f]/i, '').downcase if self.token.present?
+  end
 
   def verify_token
     unless find_token
@@ -248,7 +253,7 @@ post '/api/send_code' do
 
   json_halt 400, 'Already registered' unless User.where(number: number).count.zero?
 
-  new_value = SecureRandom.hex(4).scan(/../).join('-')
+  new_value = SecureRandom.hex(4).downcase
 
   if token = ConfirmationToken.where(number: number).first
     token.set(value: new_value)
@@ -257,7 +262,8 @@ post '/api/send_code' do
   end
 
   if token.save
-    async_send_sms(number, "Enter this confirmation code into the Shadytel website: #{token.value}.")
+    pretty_value = token.value.scan(/../).join('-')
+    async_send_sms(number, "Enter this confirmation code into the Shadytel website: #{pretty_value}.")
     json success: true, number: number
   else
     json_error errors: token.errors.as_json
