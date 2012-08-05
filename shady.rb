@@ -39,7 +39,6 @@ class User
 
   field :number,        type: String
   field :password_hash, type: String
-  field :password_salt, type: String
 
   # Optional profile info
   field :name,  type: String
@@ -47,7 +46,6 @@ class User
 
   attr_protected :number
   attr_protected :password_hash
-  attr_protected :password_salt
 
   def as_json
     {
@@ -65,7 +63,7 @@ class User
   end
   
   def matching_password?(pass)
-    BCrypt::Password.new(self.password_hash) == "#{pass}#{self.password_salt}"
+    BCrypt::Password.new(self.password_hash) == pass
   end
 
   private
@@ -84,8 +82,7 @@ class User
 
   def prepare_password
     unless password.blank?
-      self.password_salt = SecureRandom.hex(5).scan(/../).join
-      self.password_hash = ::BCrypt::Password.create("#{self.password}#{self.password_salt}").to_s
+      self.password_hash = ::BCrypt::Password.create(self.password).to_s
     end
   end
 
