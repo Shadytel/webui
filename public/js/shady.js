@@ -184,6 +184,14 @@ var AppView = Backbone.View.extend({
     } else {
       flash.find('.message').text(message);
     }
+  },
+
+  showError: function (text) {
+    var dialog = bootbox.modal(text, "Error", {
+      "animate": false,
+      "backdrop": "static",
+      "headerCloseButton": null
+    });
   }
 });
 
@@ -212,7 +220,7 @@ var SubscribersView = Backbone.View.extend({
       }, 
       error: function(model, response) {
         if (response.status != 401 && response.status != 500) {
-          alert('Error loading subscribers.');
+          app.showError('Error loading subscribers.');
         }
       }
     })
@@ -238,7 +246,7 @@ var SubscriberView = Backbone.View.extend({
       }, 
       error: function(model, response) {
         if (response.status != 401 && response.status != 500) {
-          alert('Error loading subscriber.');
+          app.showE('Error loading subscriber.');
         }
       }
     });
@@ -268,7 +276,7 @@ var ShortcodesView = Backbone.View.extend({
       },
       error: function(model, response) {
         if (response.status != 401 && response.status != 500) {
-          alert('Error loading shortcodes.');
+          app.showE('Error loading shortcodes.');
         }
       }
     })
@@ -362,7 +370,7 @@ var AccountView = Backbone.View.extend({
         app.user = null;
         self.showLogin();
       } else {
-        alert('Error logging out.');
+        app.showE('Error logging out.');
       }
     });
     return false;
@@ -393,7 +401,7 @@ var AccountShortcodesView = Backbone.View.extend({
     this.shortcodes.fetch({
       error: function(model, response) {
         if (response.status != 401 && response.status != 500) {
-          alert('Error loading shortcodes.');
+          app.showE('Error loading shortcodes.');
         }
       }
     });
@@ -438,7 +446,7 @@ var AccountProfileView = Backbone.View.extend({
         self.user = data.user;
         self.render();
       } else {
-        alert('error!!'); // FIXME
+        app.showE('error!!'); // FIXME
       }
     });
   },
@@ -506,6 +514,7 @@ var LoginView = Backbone.View.extend({
         app.returnTo = null;
 
       } else {
+        // FIXME
         alert('Invalid username or password.');
         this.$('input[name=password]').val('');
         this.$('input[name=password]').focus();
@@ -520,7 +529,7 @@ var LoginView = Backbone.View.extend({
   },
 
   forgot: function() {
-    alert('Please stop by the Shadytel booth and a trained (and possibly sober) service technician will be happy to assist you with a password reset.');
+    alert('Please stop by the Shadytel booth and a trained (though possibly not sober) service technician will be happy to assist you with a password reset.');
   }
 });
 
@@ -543,7 +552,7 @@ var AccountVerifyView = Backbone.View.extend({
           }
         }));
       } else {
-        alert(data.message);
+        app.showError(data.message);
       }
     });
 
@@ -642,7 +651,7 @@ var EditMyShortcodeView = Backbone.View.extend({
       }, 
       error: function(model, response) {
         if (response.status != 401 && response.status != 500) {
-          alert('Error loading subscribers.');
+          app.showError('Error loading subscribers.');
         }
       }
     });
@@ -672,7 +681,7 @@ var EditMyShortcodeView = Backbone.View.extend({
           router.navigate('/account/shortcodes', { trigger: true });
         },
         error: function(model, response) {
-          alert('Failed to delete');
+          app.showError('Failed to delete');
         }
       });
     }
@@ -707,7 +716,7 @@ $(document).ajaxError(function(e, jqxhr, settings, exception) {
       app.setView(new LoginView());
     }
   } else if (jqxhr.status == 500) {
-    alert("Application error.");
+    app.showError("Application error.");
   }
 });
 
@@ -812,7 +821,7 @@ jQuery.fn.showValidationErrors = function(response) {
     }
   }
 
-  alert('error'); // FIXME
+  app.showError('error'); // FIXME
 };
 
 (function($) {
