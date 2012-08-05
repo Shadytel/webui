@@ -1,2 +1,6 @@
 require './shady'
-run Sinatra::Application
+require 'resque/server'
+
+run Rack::URLMap.new \
+  "/"       => Sinatra::Application.new,
+  "/resque" => Resque::Server.new

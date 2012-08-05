@@ -3,6 +3,7 @@ require 'sinatra/json'
 require 'yaml'
 require 'mongoid'
 require 'bcrypt'
+require 'resque'
 
 Mongoid.load!('mongoid.yml')
 $config = YAML::load_file('shady.config')
