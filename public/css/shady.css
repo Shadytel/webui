@@ -57,6 +57,11 @@ legend {
   -webkit-box-shadow: 0 1px 4px rgba(34, 25, 25, 0.4);
 }
 
+.card *:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
 @media (min-width: 768px) and (max-width: 979px) {
   .card {
     width: 22.928176794%;
@@ -71,10 +76,28 @@ legend {
   }
 }
 
+.subscriber-number {
+  font-weight: bold;
+  font-size: 20px;
+}
+.subscriber-number a {
+  color: inherit;
+}
+
+.subscriber-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
 .email {
   font-size: small;
   opacity: 0.3;
 }
 .email:hover {
   opacity: 1;
+}
+
+.shortcode-owner {
+  color: #666;
+  font-size: 11px;
 }

@@ -53,7 +53,8 @@ class User
       number: self.number,
       name:   (self.name  || ''),
       email:  (self.email || ''),
-      bio:    (self.bio   || '')
+      bio:    (self.bio   || ''),
+      display: (self.name.present? ? self.name : self.number)
     }
   end
 
@@ -107,6 +108,8 @@ class Shortcode
 
   VALID_PREFIXES = %w(3 4 5)
 
+  belongs_to :owner, :class_name => 'User'
+
   field :name,        type: String
   field :description, type: String
   field :number,      type: String
@@ -139,6 +142,7 @@ class Shortcode
       url:         self.url,
       api_key:     self.api_key || '',
       api_secret:  self.api_secret || '',
+      owner:       self.owner.as_json
     }
   end
 
@@ -195,6 +199,12 @@ end
 
 get '/api/subscribers' do
   json User.all.map {|u| u.as_json }
+end
+
+get '/api/subscribers/:number' do
+  u = User.where(number: params[:number]).first
+  json_halt 404, 'Not found' unless u
+  json u.as_json
 end
 
 get '/api/shortcodes' do

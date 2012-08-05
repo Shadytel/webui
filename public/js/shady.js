@@ -14,7 +14,8 @@ var ShadyRouter = Backbone.Router.extend({
     '':                           'status',
     'status':                     'status',
     'shortcodes':                 'shortcodes',
-    'directory':                  'directory',
+    'subscribers':                'subscribers',
+    'subscribers/:number':        'subscriber',
     'applets':                    'applets',
     'account':                    'accountApps',
     'account/login':              'accountLogin',
@@ -34,8 +35,13 @@ var ShadyRouter = Backbone.Router.extend({
     app.setView(new ShortcodesView());
   },
 
-  directory: function() {
-    app.setView(new DirectoryView());
+  subscribers: function() {
+    app.setView(new SubscribersView());
+  },
+
+  subscriber: function(number) {
+    var subscriber = new Subscriber({ id: number });
+    app.setView(new SubscriberView({ model: subscriber }));
   },
 
   applets: function() {
@@ -82,6 +88,7 @@ var MyShortcode = Backbone.Model.extend({
 });
 
 var Subscriber = Backbone.Model.extend({
+  urlRoot: '/api/subscribers'
 });
 
 var SubscriberList = Backbone.Collection.extend({
@@ -192,12 +199,12 @@ var StatusView = Backbone.View.extend({
   }
 });
 
-var DirectoryView = Backbone.View.extend({
-  mainNavId: 'directory',
+var SubscribersView = Backbone.View.extend({
+  mainNavId: 'subscribers',
 
   initialize: function() {
-    this.$el.empty(ich.DirectoryView());
-    this.$el.append(ich.DirectoryView());
+    this.$el.empty()
+    this.$el.append(ich.SubscribersView());
 
     var self = this;
     this.subscribers = new SubscriberList();
@@ -213,8 +220,30 @@ var DirectoryView = Backbone.View.extend({
 
   render: function() {
     this.$('#subscribers').addRows(this.subscribers, function(subscriber) {
-      return ich.SubscriberView(subscriber.attributes);
+      return ich.SubscriberCardView(subscriber.attributes);
     }, 4);
+    return this;
+  }
+});
+
+var SubscriberView = Backbone.View.extend({
+  mainNavId: 'subscribers',
+
+  initialize: function() {
+    var self = this;
+    this.model.fetch({
+      success: function() {
+        self.modelFetched = true;
+        self.render();
+      }
+    });
+  },
+
+  render: function() {
+    if (this.modelFetched) {
+      this.$el.empty();
+      this.$el.append(ich.SubscriberView(this.model.attributes));
+    }
     return this;
   }
 });

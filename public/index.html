@@ -24,7 +24,7 @@
       <p>Put network status here</p>
     </script>
 
-    <script type="text/html" id="DirectoryView">
+    <script type="text/html" id="SubscribersView">
       <div class="row">
         <div class="span3">
           <div class="well">
@@ -39,15 +39,41 @@
     </script>
 
     <script type="text/html" id="SubscriberView">
+      <div class="row">
+        <div class="span1 offset3">
+          <div style="font-size: 40px; line-height: normal">{{number}}</div>
+        </div>
+        <div class="span8">
+          <dl class="dl-horizontal" style="margin-top: 0">
+            {{#name}}
+              <dt>Name</dt>
+              <dd>{{name}}</dd>
+            {{/name}}
+            {{#email}}
+              <dt>Email</dt>
+              <dd><a href="mailto:{{email}}">{{email}}</a></dd>
+            {{/email}}
+            {{#bio}}
+              <dt>Bio</dt>
+              <dd>{{bio}}</dd>
+            {{/bio}}
+          </dl>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/html" id="SubscriberCardView">
       <div class="card span3">
-        <h3>
-          {{name}}
+        <p class="subscriber-number">
+          <a href="/subscribers/{{number}}">{{number}}</a>
           {{#email}}
             <span class="email"><a href="mailto:{{email}}"><i class="icon icon-envelope"/></a></span>
           {{/email}}
-        </h3>
-        <h4>{{number}}</h4>
-        <p>{{bio}}</p>
+        </p>
+        {{#name}}
+        <p class="subscriber-name">{{name}}</p>
+        {{/name}}
+        <p class="subscriber-bio">{{bio}}</p>
       </div>
     </script>
 
@@ -75,6 +101,7 @@
         {{#simple_format}}
           {{description}}
         {{/simple_format}}
+        <p class="shortcode-owner">Created by <a href="/subscribers/{{owner.number}}">{{owner.display}}</a>.</p>
       </div>  
     </script>
 
@@ -349,7 +376,7 @@
       <div class="container">
         <ul class="nav nav-tabs" id="main-nav">
           <li id="status"><a href="/status">Network Status</a></li>
-          <li id="directory"><a href="/directory">Subscriber Directory</a></li>
+          <li id="subscribers"><a href="/subscribers">Subscriber Directory</a></li>
           <li id="shortcodes"><a href="/shortcodes">Shortcodes</a></li>
           <li id="applets"><a href="/applets">SIM Applets</a></li>
           <li id="account"><a href="/account">My Account</a></li>
