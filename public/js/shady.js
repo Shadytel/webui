@@ -539,7 +539,11 @@ var AccountVerifyView = Backbone.View.extend({
     var params = { number: this.$el.find('.phone').val() };
     $.jsonPost('/api/send_code', params, function(success, data) {
       if (success) {
-        app.setView(new AccountRegisterView({ attributes: params }));
+        app.setView(new AccountRegisterView({ 
+          attributes: {
+            number: data.number 
+          }
+        }));
       } else {
         alert(data.message);
       }

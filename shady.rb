@@ -21,7 +21,7 @@ end
 class User
   include Mongoid::Document
 
-  validates :number,   presence: true, uniqueness: true
+  validates :number,   presence: true, uniqueness: true, numericality: { even: true, only_integer: true }
   validates :password, presence: true, confirmation: true, length: { minimum: 8, maximum: 16, allow_blank: false }, if: :validate_password?
   validates :password_confirmation, presence: true, if: :validate_password?
 
@@ -127,7 +127,7 @@ class Shortcode
   validates :description, presence: true
   validates :url,         presence: true, format: { with: URI::regexp([/^http/, /^https/]) }
   validates :owner_id,    presence: true
-  validates :number,      presence: true, uniqueness: true
+  validates :number,      presence: true, uniqueness: true, numericality: { even: true, only_integer: true }
   validates :api_key,     presence: true, uniqueness: true
   validates :api_secret,  presence: true, uniqueness: true
 
@@ -164,6 +164,17 @@ class Shortcode
     self.errors.add(:number, 'invalid prefix') unless VALID_PREFIXES.any? { |prefix| self.number.starts_with?(prefix) }
     self.errors.add(:number, 'invalid number') unless self.number.length > 1
   end
+end
+
+class SendSMS
+  @queue = :sms_send
+  def self.perform(number, message)
+    sleep 10 # FIXME
+  end
+end
+
+def async_send_sms(number, message)
+  Resque.enqueue(SendSMS, number, message)
 end
 
 # FIXME
@@ -236,14 +247,11 @@ end
 
 post '/api/send_code' do
   number = params[:number]
+  number = number.gsub(/\D/, '')
 
   json_halt 400, 'Already registered' unless User.where(number: number).count.zero?
 
-  # FIXME:
-  # new_value = SecureRandom.hex(5).scan(/../).join('-')
-  new_value = '1234'
-
-  puts "send_code #{params.inspect}"
+  new_value = SecureRandom.hex(4).scan(/../).join('-')
 
   if token = ConfirmationToken.where(number: number).first
     token.set(value: new_value)
@@ -252,10 +260,8 @@ post '/api/send_code' do
   end
 
   if token.save
-    json success: true
-
-    # FIXME: Send SMS!!!
-
+    async_send_sms(number, "Enter this confirmation code into the Shadytel website: #{token.value}.")
+    json success: true, number: number
   else
     json_error errors: token.errors.as_json
   end
