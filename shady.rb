@@ -178,9 +178,16 @@ end
 set :sessions,       true
 set :session_secret, $config[:session_secret]
 
-whitelist = %w(login send_code register subscribers shortcodes)
+whitelist = [
+  /^\/api\/login$/,
+  /^\/api\/send_code$/,
+  /^\/api\/register$/,
+  /^\/api\/subscribers$/,
+  /^\/api\/subscribers\/\d*$/,
+  /^\/api\/shortcodes$/
+]
 before '/api/*' do
-  return if whitelist.include?(request.path[5..-1])
+  return if whitelist.any?{|expr| expr =~ request.path }
   unless session && session[:uid] && @user = User.where(_id: session[:uid]).first
     json_halt 401, 'not authenticated'
   end
