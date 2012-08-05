@@ -101,3 +101,25 @@ legend {
   color: #666;
   font-size: 11px;
 }
+
+.welcome {
+  line-height: 40px;
+  font-size: 18px;
+}
+.welcome li {
+  line-height: 24px;
+  padding-bottom: 10px;
+}
+.welcome li:last-child {
+  padding-bottom: 0;
+}
+
+.well h4 {
+  margin-bottom: 20px;
+}
+.sidelinks {
+  margin-bottom: 0;
+}
+.sidelinks li {
+  padding-bottom: 0.5em;
+}

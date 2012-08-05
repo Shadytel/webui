@@ -10,10 +10,10 @@
     <link href="/css/shady.css" rel="stylesheet">
 
     <script type="text/javascript" src="/js/spin.js"></script>
-    <script type="text/javascript" src="/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.7.2.js"></script>
     <script type="text/javascript" src="/js/jquery.spin.js"></script>
     <script type="text/javascript" src="/js/underscore-min.js"></script>
-    <script type="text/javascript" src="/js/backbone-min.js"></script>
+    <script type="text/javascript" src="/js/backbone.js"></script>
     <script type="text/javascript" src="/js/mustache.js"></script>
     <script type="text/javascript" src="/js/ICanHaz-no-mustache.min.js"></script>
     <script type="text/javascript" src="/js/bootstrap.js"></script>
@@ -21,7 +21,26 @@
     <script type="text/javascript" src="/js/shady.js"></script>
 
     <script type="text/html" id="StatusView">
-      <p>Put network status here</p>
+      <div class="row">
+        <div class="span8 welcome">
+            <h2>Welcome to Shadytel.</h2>
+            <p>This experimental network is brought to you by Shadytel.</p>
+            <ul>
+              <li>All calls and text messages are <strong>free</strong>.</li>
+              <li>People outside Toorcamp can reach you by dialing <strong>1-337-422-4364</strong> followed by your Shadytel phone number.</li>
+              <li>Create your own <strong>SMS shortcode apps</strong> using our <a href="/shortcodes">API</a>.</li>
+              <li>Your SIM card supports <strong>JavaCard v2.1.1 STK applets</strong>. Learn how to <a href="/applets">write your own</a>.</li>
+              <li><strong>911 service is not available</strong>. Your handset may switch to another network if you attempt an emergency call.</li>
+            </ul>
+            <p>If you have any questions, dial <strong>611</strong> or stop by the Shadytel booth.</p>
+        </div>
+        <div class="span4">
+          <div class="well">
+            <h3>Network Status</h3>
+            <p>Everything is down!</p>
+          </div>
+        </div>
+      </div>
     </script>
 
     <script type="text/html" id="SubscribersView">
@@ -82,7 +101,7 @@
         <div class="span3">
           <div class="well">
           <h4>Create your own SMS-based shortcode apps!</h4>
-          <ul class="unstyled">
+          <ul class="unstyled sidelinks">
             <li><a href="/account/shortcodes/new">Register a new shortcode</a></li>
             <li><a href="/docs/api.html" target="_blank">API documentation</a></li>
           </ul>
@@ -375,7 +394,7 @@
     <div id="app">
       <div class="container">
         <ul class="nav nav-tabs" id="main-nav">
-          <li id="status"><a href="/status">Network Status</a></li>
+          <li id="home"><a href="/home">Home</a></li>
           <li id="subscribers"><a href="/subscribers">Subscriber Directory</a></li>
           <li id="shortcodes"><a href="/shortcodes">Shortcodes</a></li>
           <li id="applets"><a href="/applets">SIM Applets</a></li>

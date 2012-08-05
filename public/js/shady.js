@@ -11,8 +11,8 @@ function setAccountView(subView) { // FIXME: Move this
 
 var ShadyRouter = Backbone.Router.extend({
   routes: {
-    '':                           'status',
-    'status':                     'status',
+    '':                           'home',
+    'home':                       'home',
     'shortcodes':                 'shortcodes',
     'subscribers':                'subscribers',
     'subscribers/:number':        'subscriber',
@@ -27,7 +27,7 @@ var ShadyRouter = Backbone.Router.extend({
     'account/profile':            'accountProfile'
   },
 
-  status: function() {
+  home: function() {
     app.setView(new StatusView());
   },
 
@@ -145,8 +145,6 @@ var AppView = Backbone.View.extend({
   },
 
   setView: function (view) {
-    this.hideLoading();
-
     if (this.currentView) {
       if (this.currentView.hidden) {
         this.currentView.hidden();
@@ -190,7 +188,7 @@ var AppView = Backbone.View.extend({
 });
 
 var StatusView = Backbone.View.extend({
-  mainNavId: 'status',
+  mainNavId: 'home',
 
   render: function() {
     this.$el.empty();
