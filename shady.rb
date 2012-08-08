@@ -168,15 +168,50 @@ class Shortcode
   end
 end
 
+class Message
+  include Mongoid::Document
+
+  validates :from_dn, presence: true
+  validates :to_dn,   presence: true
+
+  field :from_dn, type: String
+  field :to_dn,   type: String
+  # field :body_type, 
+  field :body,    type: String
+end
+
 class SendSMS
   @queue = :sms_send
-  def self.perform(number, message)
+  def self.perform(from_number, to_number, message)
     sleep 10 # FIXME
   end
 end
 
-def async_send_sms(number, message)
-  Resque.enqueue(SendSMS, number, message)
+class ReceiveSMS
+  @queue = :sms_receive
+  def self.perform(data)
+    from_number = data[:from_number]
+    to_number   = data[:to_number]
+    message     = data[:message]
+    if s = Shortcode.where(number: to_number)
+      Resque.enqueue(ShortcodeCallback, from_number, s.callback, message)
+    else
+      # Send back to subscriber
+      async_send_sms(from_number, to_number, message)
+    end
+  end
+end
+
+class ShortcodeCallback
+  @queue = :shortcode_cb
+  def self.perform(from_number, url, message)
+    # POST data to url!
+    
+  end
+end
+
+def async_send_sms(from_number, to_number, message)
+  Resque.enqueue(SendSMS, from_number, to_number, message)
 end
 
 # FIXME
@@ -188,6 +223,15 @@ def json_error(json)
   halt 400, { 'Content-Type' => 'application/json' }, { success: false }.merge(json).to_json
 end
 
+def verify_hmac(api_secret, post_data)
+  signature = post_data[:signature]
+  msg = post_data.sort.reject { |k, v| k == 'signature' }.map do |k, v| 
+    '%s=%s' % [ k, CGI::escape(v[0]) ]
+  end.join('&')
+  real_hmac = HMAC::SHA512.new(api_secret).update(msg).hexdigest
+  (untrusted_hmac == real_hmac)
+end
+
 set :sessions,       true
 set :session_secret, $config[:session_secret]
 
@@ -197,13 +241,31 @@ whitelist = [
   /^\/api\/register$/,
   /^\/api\/subscribers$/,
   /^\/api\/subscribers\/\d*$/,
-  /^\/api\/shortcodes$/
+  /^\/api\/shortcodes$/,
+  /^\/api\/incoming_sms$/,
+  /^\/api\/send_sms$/
 ]
 before '/api/*' do
   return if whitelist.any?{|expr| expr =~ request.path }
   unless session && session[:uid] && @user = User.where(_id: session[:uid]).first
     json_halt 401, 'not authenticated'
   end
+end
+
+# Called by the SMSMC
+post '/api/incoming_sms' do
+  post_data = CGI::parse(request.body.read)
+  json_halt 401, 'invalid signature' unless verify_hmac($config[:smsmc_key], post_data)
+  Resque.enqueue(ReceiveSMS, post_data)
+end
+
+# Called by Shortcode providers
+post '/api/send_sms' do
+  post_data = CGI::parse(request.body.read)
+  s = Shortcode.where(api_key: params[:api_key]).first
+  json_halt 401, 'invalid api key'   unless s
+  json_halt 401, 'invalid signature' unless verify_hmac(s.api_secret, post_data)
+  async_send_sms(s.number, post_data[:number], post_data[:message])
 end
 
 get '/api/me' do
@@ -263,7 +325,7 @@ post '/api/send_code' do
 
   if token.save
     pretty_value = token.value.scan(/../).join('-')
-    async_send_sms(number, "Enter this confirmation code into the Shadytel website: #{pretty_value}.")
+    async_send_sms('611', number, "Enter this confirmation code into the Shadytel website: #{pretty_value}.")
     json success: true, number: number
   else
     json_error errors: token.errors.as_json
