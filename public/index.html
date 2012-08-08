@@ -126,7 +126,47 @@
     </script>
 
     <script type="text/html" id="SIMAppletsView">
-      <p>Put shit here</p>
+      <div class="row">
+        <div class="span9">
+          <h3>All Shadytel SIM cards support JavaCard STK applets for 1990s-style mobile development!</h3>
+
+          <h3>Creating JavaCard STK Applets</h3>
+
+<p>Use the hello-stk example to get started.</p>
+
+<pre><code>$ mkdir javacard
+$ cd javacard
+$ git clone https://github.com/Shadytel/sim-tools.git
+$ git clone https://github.com/Shadytel/hello-stk.git
+$ cd hello-stk
+$ make
+</code></pre>
+
+<p>To install the applet onto a SIM card, first set the type of reader you are using.</p>
+
+<pre><code># For PCSC readers:
+$ export SHADYSIM_OPTIONS="--pcsc"
+
+# For USB-serial readers:
+$ export SHADYSIM_OPTIONS="--serialport /dev/ttyUSB0"
+
+$ make install
+</code></pre>
+
+<p>The shadysim tool has lots of other options.</p>
+
+<pre><code>$ ./sim-tools/bin/shadysim --help
+</code></pre>
+</div>
+        <div class="span3">
+          <h3>What is JavaCard?</h3>
+          <blockquote>Java Card refers to a technology that allows Java-based applications (applets) to be run securely on smart cards and similar small memory footprint devices.
+          <small><a href="http://en.wikipedia.org/wiki/Java_Card">en.wikipedia.org/wiki/Java_Card</a></small></blockquote>
+          <h3>What is STK?</h3>
+          <blockquote>SIM Application Toolkit (commonly referred to as STK) is a standard of the GSM system which enables the Subscriber Identity Module (SIM) to initiate actions which can be used for various value-added services.
+      <small><a href="http://en.wikipedia.org/wiki/SIM_Application_Toolkit">en.wikipedia.org/wiki/SIM_Application_Toolkit</a></small></blockquote>
+        </div>
+      </div>
     </script>
 
     <script type="text/html" id="LoginView">
